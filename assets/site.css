@@ -34,7 +34,7 @@
   --rule-soft:rgba(35,40,46,.08);
   --rule-light:rgba(255,255,255,.22);
 
-  --display:"Archivo","Helvetica Neue",Arial,sans-serif;
+  --display:"Josefin Sans","Century Gothic","Helvetica Neue",Arial,sans-serif;
   --text:"Literata",Georgia,serif;
 
   --gut:clamp(20px,4.4vw,56px);
@@ -53,7 +53,7 @@ body{
 }
 img{max-width:100%;display:block}
 a{color:inherit}
-h1,h2,h3,h4{margin:0;font-family:var(--display);font-weight:600;line-height:1.14;letter-spacing:-.018em}
+h1,h2,h3,h4{margin:0;font-family:var(--display);font-weight:700;line-height:1.16;letter-spacing:-.006em}
 p{margin:0}
 ::selection{background:var(--blue);color:#fff}
 
@@ -62,14 +62,14 @@ p{margin:0}
 .band-tight{padding-block:clamp(3rem,5.5vw,5rem)}
 
 /* type scale — deliberately restrained */
-.d1{font-size:clamp(2.1rem,4.2vw,3.35rem);letter-spacing:-.025em}
-.d2{font-size:clamp(1.65rem,2.9vw,2.4rem);letter-spacing:-.022em}
-.d3{font-size:clamp(1.18rem,1.65vw,1.4rem);letter-spacing:-.012em;font-weight:600}
+.d1{font-size:clamp(2.3rem,4.6vw,3.7rem);letter-spacing:-.012em}
+.d2{font-size:clamp(1.8rem,3.2vw,2.65rem);letter-spacing:-.01em}
+.d3{font-size:clamp(1.24rem,1.75vw,1.5rem);letter-spacing:-.004em;font-weight:700}
 .d4{font-family:var(--display);font-size:.95rem;font-weight:600;letter-spacing:-.005em}
 .lede{font-size:clamp(1.09rem,1.35vw,1.22rem);line-height:1.62;color:var(--ink-2);max-width:60ch}
 .body-sm{font-size:.975rem;color:var(--ink-2)}
 .meta{font-family:var(--display);font-size:.78rem;font-weight:500;letter-spacing:.02em;color:var(--ink-3)}
-.label{font-family:var(--display);font-size:.8rem;font-weight:600;letter-spacing:.01em;color:var(--blue)}
+.label{font-family:var(--display);font-size:.84rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--blue)}
 .measure{max-width:64ch}
 
 /* links */
@@ -83,7 +83,7 @@ p{margin:0}
 .ln-b:hover svg{transform:translateX(4px)}
 
 /* buttons — squared, not pills */
-.btn{font-family:var(--display);font-weight:600;font-size:.94rem;letter-spacing:-.004em;
+.btn{font-family:var(--display);font-weight:600;font-size:1rem;letter-spacing:.005em;
   display:inline-flex;align-items:center;gap:.55em;padding:.92em 1.5em;border-radius:3px;
   border:1px solid transparent;cursor:pointer;text-decoration:none;
   transition:background-color .3s var(--ease),color .3s var(--ease),border-color .3s var(--ease)}
@@ -103,7 +103,7 @@ p{margin:0}
 .hdr-in{display:flex;align-items:center;gap:clamp(18px,3vw,44px);min-height:92px}
 .hdr-logo img{width:clamp(126px,12vw,158px);height:auto}
 .hdr nav{display:flex;align-items:center;gap:clamp(16px,2vw,30px);margin-left:auto}
-.hdr nav a{font-family:var(--display);font-size:.9rem;font-weight:500;color:var(--ink-2);
+.hdr nav a{font-family:var(--display);font-size:.96rem;font-weight:600;color:var(--ink-2);
   text-decoration:none;padding:6px 0;position:relative;white-space:nowrap;transition:color .3s var(--ease)}
 .hdr nav a::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1.5px;background:var(--blue);
   transform:scaleX(0);transform-origin:left;transition:transform .4s var(--ease)}
@@ -112,7 +112,7 @@ p{margin:0}
 .hdr nav a[aria-current]{color:var(--ink)}
 .hdr-call{display:flex;align-items:center;gap:14px;padding-left:clamp(14px,2vw,26px);
   border-left:1px solid var(--rule-soft);margin-left:4px}
-.hdr-tel{font-family:var(--display);font-weight:600;font-size:.92rem;color:var(--ink);text-decoration:none;white-space:nowrap}
+.hdr-tel{font-family:var(--display);font-weight:600;font-size:.98rem;color:var(--ink);text-decoration:none;white-space:nowrap}
 .hdr-tel:hover{color:var(--blue)}
 .burger{display:none;margin-left:auto;width:46px;height:46px;border:1px solid var(--rule);
   border-radius:3px;background:none;cursor:pointer;align-items:center;justify-content:center}
@@ -154,7 +154,7 @@ body.home .mnav{background:var(--ivory)}
 .hero-mark{margin:clamp(22px,3.2vh,34px) auto clamp(20px,2.8vh,30px);line-height:0}
 .hero-mark img{width:clamp(250px,34vw,500px);height:auto;margin-inline:auto;
   filter:drop-shadow(0 6px 26px rgba(0,0,0,.45))}
-.hero-tag{font-family:var(--display);font-weight:600;letter-spacing:-.02em;
+.hero-tag{font-family:var(--display);font-weight:700;letter-spacing:-.008em;
   font-size:clamp(1.5rem,3vw,2.25rem);line-height:1.2;color:#fff}
 .hero-sub{margin:16px auto 0;max-width:46ch;font-size:clamp(1rem,1.25vw,1.12rem);
   line-height:1.6;color:rgba(255,255,255,.84)}

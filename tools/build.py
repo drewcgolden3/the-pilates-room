@@ -21,8 +21,12 @@ RECIPES.sort(key=lambda r: r.get('date') or '', reverse=True)
 BASE = os.environ.get('BASE', '').rstrip('/')
 PREVIEW = os.environ.get('PREVIEW') == '1'
 
+# Display face taken from her logo: the wordmark is geometric, Josefin Sans
+# is its closest widely available match. Literata keeps body copy readable —
+# Josefin has a very small x-height and is a display face, not a text face.
 FONTS = ("https://fonts.googleapis.com/css2"
-         "?family=Archivo:wght@400;500;600&family=Literata:opsz,wght@7..72,400;7..72,500&display=swap")
+         "?family=Josefin+Sans:wght@400;500;600;700"
+         "&family=Literata:opsz,wght@7..72,400;7..72,500&display=swap")
 
 def e(s): return html.escape(str(s or ''), quote=True)
 def addr(): return "%s, %s, %s %s" % (S['street'], S['city'], S['region'], S['zip'])
