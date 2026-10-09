@@ -217,8 +217,11 @@ def page_home():
         '</figure>' % (' class="on"' if i == 0 else '', n, n, n, e(alt),
                        'fetchpriority="high"' if i == 0 else 'loading="lazy"')
         for i, (n, alt) in enumerate(S['hero']))
-    dots = ''.join('<button type="button" aria-label="Show photograph %d" aria-current="%s"></button>'
-                   % (i + 1, 'true' if i == 0 else 'false') for i in range(len(S['hero'])))
+    dots = ('' if len(S['hero']) < 2 else
+            '<div class="hero-dots" id="heroDots" role="group" aria-label="Choose photograph">'
+            + ''.join('<button type="button" aria-label="Show photograph %d" aria-current="%s"></button>'
+                      % (i + 1, 'true' if i == 0 else 'false') for i in range(len(S['hero'])))
+            + '</div>')
 
     rail = ''.join('<div><p class="k">%s</p><p class="v">%s</p></div>' % (k, v) for k, v in [
         ("One to one, or two", "No class floor and no crowded schedule."),
@@ -254,7 +257,7 @@ def page_home():
     '<a class="btn btn-ghost-l" href="/book-an-appointment/">How booking works</a></div>'
     '<p class="hero-foot">%s &nbsp;·&nbsp; Free parking behind the building &nbsp;·&nbsp; '
     'Monday to Friday, by appointment</p>'
-    '<div class="hero-dots" id="heroDots" role="group" aria-label="Choose photograph">%s</div>'
+    '%s'
     '</div></section>'
 
     '<section class="rail"><div class="shell rail-in">%s</div></section>'
