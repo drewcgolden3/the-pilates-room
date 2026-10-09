@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
-"""Build The Pilates Room from content/.
+"""Build The Pilates Room.
 
-    python3 tools/build.py
+    python3 tools/build.py                                   # production
+    BASE=/the-pilates-room PREVIEW=1 python3 tools/build.py  # staging
 
-Everything factual — address, hours, rates, credentials, FAQs — lives in
-content/site.json and is rendered into BOTH the visible page and the
-schema.org markup, so the two can never drift apart. That matching is what
-local search and the AI assistants actually reward.
+Every fact on the site — address, hours, rates, credentials, FAQs — comes
+from content/site.json and is rendered into BOTH the visible page and the
+schema.org markup. They cannot drift apart, which is the thing local search
+and the AI assistants actually reward.
 """
 import html, json, os, re, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -14,18 +15,24 @@ import recipes as R
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 S = json.load(open(os.path.join(ROOT, 'content', 'site.json')))
+RECIPES = json.load(open(os.path.join(ROOT, 'content', 'recipes-raw.json')))
+RECIPES.sort(key=lambda r: r.get('date') or '', reverse=True)
 
-# BASE lets one build serve either from a GitHub Pages subpath (staging) or
-# from the domain root (launch). PREVIEW keeps the staging copy out of search
-# so it can never compete with her live WordPress site for the same content.
 BASE = os.environ.get('BASE', '').rstrip('/')
 PREVIEW = os.environ.get('PREVIEW') == '1'
 
-def rebase(doc):
-    """Prefix every root-absolute asset/link path with BASE.
+FONTS = ("https://fonts.googleapis.com/css2"
+         "?family=Archivo:wght@400;500;600&family=Literata:opsz,wght@7..72,400;7..72,500&display=swap")
 
-    Applied once to the finished document rather than at every call site, so
-    there is no way to forget it on a new template."""
+def e(s): return html.escape(str(s or ''), quote=True)
+def addr(): return "%s, %s, %s %s" % (S['street'], S['city'], S['region'], S['zip'])
+
+ARR = ('<svg width="14" height="10" viewBox="0 0 14 10" fill="none" aria-hidden="true">'
+       '<path d="M8.6 1l4 4-4 4M12 5H1" stroke="currentColor" stroke-width="1.4" '
+       'stroke-linecap="round" stroke-linejoin="round"/></svg>')
+
+def rebase(doc):
+    """Prefix root-absolute paths with BASE, once, over the finished document."""
     if not BASE:
         return doc
     doc = re.sub(r'(\b(?:href|src)=")(/(?!/))', r'\1' + BASE + r'\2', doc)
@@ -33,44 +40,46 @@ def rebase(doc):
                  lambda m: m.group(1) + re.sub(r'(^|,\s*)/', r'\1' + BASE + '/', m.group(2)) + m.group(3),
                  doc)
     return doc
-FONTS = ("https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;"
-         "0,9..144,400;0,9..144,500;1,9..144,300&family=Inter:wght@400;500;600&display=swap")
 
-def e(s): return html.escape(str(s), quote=True)
-def addr(): return f"{S['street']}, {S['city']}, {S['region']} {S['zip']}"
-def img(name, alt, cls="", sizes="(max-width:980px) 100vw, 50vw", loading="lazy"):
-    return (f'<img src="/assets/img/{name}.jpg" srcset="/assets/img/{name}@700.jpg 700w, '
-            f'/assets/img/{name}.jpg 1400w" sizes="{sizes}" alt="{e(alt)}" '
-            f'loading="{loading}" decoding="async"{f" class={cls}" if cls else ""}>')
-ARROW = ('<svg width="15" height="11" viewBox="0 0 15 11" fill="none" aria-hidden="true">'
-         '<path d="M9.2 1l4.3 4.5L9.2 10M13 5.5H1" stroke="currentColor" stroke-width="1.3" '
-         'stroke-linecap="round" stroke-linejoin="round"/></svg>')
+def pic(name, alt, sizes, ratio='', prio=False, cls=''):
+    return ('<img src="/assets/img/%s.jpg" srcset="/assets/img/%s@700.jpg 700w, /assets/img/%s.jpg 1400w" '
+            'sizes="%s" alt="%s" width="1400" height="%s" %s decoding="async"%s>'
+            % (name, name, name, sizes, e(alt), ratio or '1050',
+               'fetchpriority="high"' if prio else 'loading="lazy"',
+               ' class="%s"' % cls if cls else ''))
 
-def local_business_schema():
+def rpic(slug, alt, sizes, prio=False):
+    return ('<img src="/assets/img/recipes/%s.jpg" srcset="/assets/img/recipes/%s@560.jpg 560w, '
+            '/assets/img/recipes/%s.jpg 1000w" sizes="%s" alt="%s" width="1000" height="750" '
+            '%s decoding="async">'
+            % (slug, slug, slug, sizes, e(alt), 'fetchpriority="high"' if prio else 'loading="lazy"'))
+
+# ───────────────────────────────────────────────────────── schema
+def biz():
     return {
         "@context": "https://schema.org", "@type": "HealthAndBeautyBusiness",
-        "@id": S['url'] + "/#studio",
-        "name": S['name'], "description": S['tagline'], "url": S['url'] + "/",
-        "telephone": S['phoneRaw'], "email": S['email'], "priceRange": S['priceRange'],
+        "@id": S['url'] + "/#studio", "name": S['name'], "description": S['tagline'],
+        "url": S['url'] + "/", "telephone": S['phoneRaw'], "email": S['email'],
+        "priceRange": S['priceRange'],
         "image": S['url'] + "/assets/img/hands-on-springs.jpg",
         "logo": S['url'] + "/assets/img/logo.png",
+        "foundingDate": str(S.get('studioSince', '')),
         "address": {"@type": "PostalAddress", "streetAddress": S['street'],
                     "addressLocality": S['city'], "addressRegion": S['region'],
                     "postalCode": S['zip'], "addressCountry": "US"},
         "geo": {"@type": "GeoCoordinates", "latitude": S['lat'], "longitude": S['lon']},
-        "openingHoursSpecification": [
-            {"@type": "OpeningHoursSpecification",
-             "dayOfWeek": [f"https://schema.org/{d}" for d in
-                           ["Monday","Tuesday","Wednesday","Thursday","Friday"]],
-             "opens": o, "closes": c} for (_a, _b, o, c) in S['hoursSpec']],
+        "openingHoursSpecification": [{
+            "@type": "OpeningHoursSpecification",
+            "dayOfWeek": ["https://schema.org/%s" % d for d in
+                          ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]],
+            "opens": o, "closes": c} for (_a, _b, o, c) in S['hoursSpec']],
         "sameAs": S['social'],
         "founder": {"@type": "Person", "name": S['instructor']},
         "employee": {"@type": "Person", "name": S['instructor'],
                      "jobTitle": "Certified Pilates Instructor"},
         "areaServed": [{"@type": "City", "name": n} for n in
-                       ["Portsmouth","Rye","New Castle","Greenland","Newington","Kittery","York"]],
-        "hasOfferCatalog": {
-            "@type": "OfferCatalog", "name": "Pilates and movement services",
+                       ["Portsmouth", "Rye", "New Castle", "Greenland", "Newington", "Kittery", "York"]],
+        "hasOfferCatalog": {"@type": "OfferCatalog", "name": "Pilates and movement services",
             "itemListElement": [
                 {"@type": "Offer",
                  "itemOffered": {"@type": "Service", "name": s['name'], "description": s['desc'],
@@ -85,332 +94,374 @@ def faq_schema():
                             "acceptedAnswer": {"@type": "Answer", "text": a}}
                            for q, a in S['faqs']]}
 
-def nav_html(group, cls, path):
-    out = []
-    for href, label in S[group]:
-        cur = ' aria-current="page"' if href == path else ''
-        out.append(f'<a href="{href}"{cur}>{e(label)}</a>')
-    return f'<nav class="{cls}">' + ''.join(out) + '</nav>'
-
+# ───────────────────────────────────────────────────────── chrome
 def header(path):
-    links = ''.join(f'<a href="{h}">{e(l)}</a>' for h, l in S['navLeft'] + S['navRight'])
-    return f'''<header class="hdr" id="hdr">
-  <div class="wrap hdr-in">
-    {nav_html('navLeft','nav-l',path)}
-    <a class="brand" href="/" aria-label="{e(S['name'])} — home">
-      <img src="/assets/img/logo.png" width="188" height="99" alt="{e(S['name'])}">
-    </a>
-    {nav_html('navRight','nav-r',path)}
-    <button class="burger" id="burger" aria-label="Menu" aria-expanded="false"><span></span></button>
-  </div>
-  <div class="mnav" id="mnav"><div class="wrap">{links}
-    <a href="tel:{S['phoneRaw']}">{e(S['phone'])}</a></div></div>
-</header>'''
+    links = S['navLeft'] + [['/what-is-pilates/', 'What is Pilates']] + S['navRight']
+    nav = ''.join('<a href="%s"%s>%s</a>' % (h, ' aria-current="page"' if h == path else '', e(l))
+                  for h, l in links)
+    mob = ''.join('<a href="%s">%s</a>' % (h, e(l)) for h, l in links)
+    return ('<header class="hdr"><div class="shell hdr-in">'
+            '<a class="hdr-logo" href="/" aria-label="%s — home">'
+            '<img src="/assets/img/logo.png" width="158" height="84" alt="%s"></a>'
+            '<nav aria-label="Primary">%s</nav>'
+            '<div class="hdr-call"><a class="hdr-tel" href="tel:%s">%s</a>'
+            '<a class="btn btn-pri" href="/book-an-appointment/">Book</a></div>'
+            '<button class="burger" id="burger" aria-label="Menu" aria-expanded="false" '
+            'aria-controls="mnav"><span></span></button>'
+            '</div><div class="mnav" id="mnav"><div class="shell">%s'
+            '<a href="tel:%s">Call %s</a></div></div></header>'
+            % (e(S['name']), e(S['name']), nav, S['phoneRaw'], e(S['phone']),
+               mob, S['phoneRaw'], e(S['phone'])))
 
 def footer():
-    socials = ''.join(f'<a href="{u}" rel="noopener">{"Facebook" if "facebook" in u else "YouTube"}</a>'
-                      for u in S['social'])
-    links = ''.join(f'<a href="{h}">{e(l)}</a>'
-                    for h, l in S['navLeft'] + [['/what-is-pilates/', 'What is Pilates']] + S['navRight'])
-    return f'''<footer class="ftr"><div class="wrap">
-  <div class="ftr-top">
-    <div>
-      <p class="ftr-mark">{e(S['name'])}</p>
-      <p class="ftr-sub">{e(S['city'])}, New Hampshire</p>
-      <p>{e(addr())}</p>
-      <p><a href="tel:{S['phoneRaw']}">{e(S['phone'])}</a> · <a href="mailto:{S['email']}">{e(S['email'])}</a></p>
-      <p>{e(S['hours'])}</p>
-      <p class="socials">{socials}</p>
-    </div>
-    <nav>{links}</nav>
-  </div>
-  <div class="ftr-btm"><span>&copy; 2026 {e(S['name'])}</span>
-    <span>Site by <a href="https://theswitchboardcompany.com">The Switchboard Company</a></span></div>
-</div></footer>'''
+    links = S['navLeft'] + [['/what-is-pilates/', 'What is Pilates']] + S['navRight']
+    nav = ''.join('<li><a href="%s">%s</a></li>' % (h, e(l)) for h, l in links)
+    socials = ''.join('<li><a href="%s" rel="noopener">%s</a></li>'
+                      % (u, 'Facebook' if 'facebook' in u else 'YouTube') for u in S['social'])
+    return ('<footer class="ftr"><div class="shell">'
+            '<div class="ftr-grid">'
+            '<div><p class="ftr-name">%s</p>'
+            '<p>%s<br>%s, %s %s</p>'
+            '<p style="margin-top:10px">%s</p>'
+            '<p style="margin-top:10px"><a href="tel:%s">%s</a><br><a href="mailto:%s">%s</a></p></div>'
+            '<div><h4>Pages</h4><ul>%s</ul></div>'
+            '<div><h4>Hours</h4><ul><li>%s</li><li>%s</li></ul>'
+            '<h4 style="margin-top:22px">Follow</h4><ul>%s</ul></div>'
+            '</div>'
+            '<div class="ftr-btm"><span>&copy; 2026 %s. Teaching on the Seacoast since %s.</span>'
+            '<span>Site by <a href="https://theswitchboardcompany.com">The Switchboard Company</a></span>'
+            '</div></div></footer>'
+            % (e(S['name']), e(S['street']), e(S['city']), e(S['region']), e(S['zip']),
+               e(S['parking']), S['phoneRaw'], e(S['phone']), S['email'], e(S['email']),
+               nav, e(S['hours']), 'Appointment only', socials,
+               e(S['name']), S.get('teachingSince', 2008)))
 
-def shell(path, title, desc, body, schema=None, hero_preload=None):
-    blocks = ''.join(
-        f'\n<script type="application/ld+json">{json.dumps(s, separators=(",",":"))}</script>'
-        for s in (schema or []))
+def shell(path, title, desc, body, schema=None, preload=None):
+    blocks = ''.join('\n<script type="application/ld+json">%s</script>'
+                     % json.dumps(s, separators=(',', ':')) for s in (schema or []))
     canon = S['url'] + path
     noindex = '\n<meta name="robots" content="noindex,nofollow">' if PREVIEW else ''
-    pre = (f'\n<link rel="preload" as="image" href="/assets/img/{hero_preload}.jpg" '
-           f'imagesrcset="/assets/img/{hero_preload}@700.jpg 700w, /assets/img/{hero_preload}.jpg 1400w">'
-           if hero_preload else '')
-    return f'''<!DOCTYPE html>
-<html lang="en" class="no-js">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{e(title)}</title>
-<meta name="description" content="{e(desc)}">
-<link rel="canonical" href="{canon}">{noindex}
-<meta property="og:type" content="website">
-<meta property="og:title" content="{e(title)}">
-<meta property="og:description" content="{e(desc)}">
-<meta property="og:url" content="{canon}">
-<meta property="og:image" content="{S['url']}/assets/img/hands-on-springs.jpg">
-<meta property="og:locale" content="en_US">
-<meta name="twitter:card" content="summary_large_image">
-<link rel="icon" href="/assets/img/logo.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="{FONTS}">
-<link rel="stylesheet" href="/assets/site.css">{pre}
-<script>document.documentElement.className=document.documentElement.className.replace('no-js','js')</script>{blocks}
-</head>
-<body>
-{header(path)}
-<main>
-{body}
-</main>
-{footer()}
-<script src="/assets/site.js" defer></script>
-</body>
-</html>
-'''
+    pre = ('\n<link rel="preload" as="image" href="/assets/img/%s.jpg" '
+           'imagesrcset="/assets/img/%s@700.jpg 700w, /assets/img/%s.jpg 1400w">'
+           % (preload, preload, preload)) if preload else ''
+    return ('<!DOCTYPE html>\n<html lang="en">\n<head>\n'
+            '<meta charset="UTF-8">\n'
+            '<meta name="viewport" content="width=device-width, initial-scale=1">\n'
+            '<title>%s</title>\n<meta name="description" content="%s">\n'
+            '<link rel="canonical" href="%s">%s\n'
+            '<meta property="og:type" content="website">\n'
+            '<meta property="og:title" content="%s">\n'
+            '<meta property="og:description" content="%s">\n'
+            '<meta property="og:url" content="%s">\n'
+            '<meta property="og:image" content="%s/assets/img/hands-on-springs.jpg">\n'
+            '<meta property="og:locale" content="en_US">\n'
+            '<meta name="twitter:card" content="summary_large_image">\n'
+            '<meta name="theme-color" content="#FBF8F4">\n'
+            '<link rel="icon" href="/assets/img/logo.png">\n'
+            '<link rel="preconnect" href="https://fonts.googleapis.com">\n'
+            '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>\n'
+            '<link rel="stylesheet" href="%s">\n'
+            '<link rel="stylesheet" href="/assets/site.css">%s%s\n'
+            '</head>\n<body>\n%s\n<main id="main">\n%s\n</main>\n%s\n'
+            '<script src="/assets/site.js" defer></script>\n</body>\n</html>\n'
+            % (e(title), e(desc), canon, noindex, e(title), e(desc), canon, S['url'],
+               FONTS, pre, blocks, header(path), body, footer()))
 
 def write(path, text):
     text = rebase(text)
-    out = os.path.join(ROOT, path.strip('/'), 'index.html') if path != '/' else os.path.join(ROOT, 'index.html')
+    out = (os.path.join(ROOT, 'index.html') if path == '/'
+           else os.path.join(ROOT, path.strip('/'), 'index.html'))
     os.makedirs(os.path.dirname(out), exist_ok=True)
     open(out, 'w', encoding='utf-8').write(text)
     return out
 
-# ─────────────────────────────────────────────────────────── sections
-def hero():
+# ───────────────────────────────────────────────────────── blocks
+def cta(title, lede, pale=True):
+    return ('<section class="band on-blue"><div class="shell cta-in">'
+            '<div><span class="label">Get started</span>'
+            '<h2 class="d2" style="margin-top:12px">%s</h2>'
+            '<p class="lede" style="margin-top:16px">%s</p></div>'
+            '<div class="cta-acts"><a class="btn %s" href="tel:%s">Call %s%s</a>'
+            '<a class="btn btn-ghost-l" href="/book-an-appointment/">How booking works</a></div>'
+            '</div></section>'
+            % (e(title), e(lede), 'btn-pale' if pale else 'btn-pri',
+               S['phoneRaw'], e(S['phone']), ARR))
+
+def visit():
+    rows = [("Address", "%s<br>%s, %s %s" % (e(S['street']), e(S['city']), e(S['region']), e(S['zip']))),
+            ("Parking", e(S['parking'])),
+            ("Phone", '<a href="tel:%s">%s</a>' % (S['phoneRaw'], e(S['phone']))),
+            ("Email", '<a href="mailto:%s">%s</a>' % (S['email'], e(S['email']))),
+            ("Hours", e(S['hours']))]
+    dl = ''.join('<div class="vr"><dt>%s</dt><dd>%s</dd></div>' % (k, v) for k, v in rows)
+    return ('<section class="band" id="visit"><div class="shell visit">'
+            '<div><span class="label">Visit</span>'
+            '<h2 class="d2" style="margin:12px 0 22px">Downtown Portsmouth.</h2>'
+            '<dl class="vlist">%s</dl></div>'
+            '<div class="map"><iframe src="https://www.google.com/maps?q=%s+%s+%s+%s&output=embed" '
+            'loading="lazy" title="Map to %s"></iframe></div>'
+            '</div></section>'
+            % (dl, S['street'].replace(' ', '+'), S['city'], S['region'], S['zip'], e(addr())))
+
+# ───────────────────────────────────────────────────────── pages
+def page_home():
     slides = ''.join(
         '<figure%s><img src="/assets/img/%s.jpg" srcset="/assets/img/%s@700.jpg 700w, '
-        '/assets/img/%s.jpg 1400w" sizes="100vw" alt="%s" %s decoding="async"></figure>'
-        % (' class="on"' if i == 0 else '', n, n, n, e(alt),
-           'fetchpriority="high"' if i == 0 else 'loading="lazy"')
+        '/assets/img/%s.jpg 1400w" sizes="(max-width:1040px) 100vw, 50vw" alt="%s" %s decoding="async">'
+        '</figure>' % (' class="on"' if i == 0 else '', n, n, n, e(alt),
+                       'fetchpriority="high"' if i == 0 else 'loading="lazy"')
         for i, (n, alt) in enumerate(S['hero']))
-    dots = ''.join('<button type="button" aria-label="Show image %d" aria-current="%s"></button>'
+    dots = ''.join('<button type="button" aria-label="Show photograph %d" aria-current="%s"></button>'
                    % (i + 1, 'true' if i == 0 else 'false') for i in range(len(S['hero'])))
-    return '''<section class="hero">
-  <div class="hero-slides" id="heroSlides">%s</div>
-  <div class="wrap hero-in">
-    <img class="hero-logo" src="/assets/img/logo.png" width="597" height="316"
-         alt="%s" fetchpriority="high">
-    <p class="eyebrow eyebrow-light">%s</p>
-    <h1 class="h1">One room, one teacher, and your full hour.</h1>
-    <p class="lead">Private and semi-private Reformer Pilates with %s &mdash; built around your body, your injuries, and what you want to get back to doing.</p>
-    <div class="hero-cta">
-      <a class="btn btn-light" href="tel:%s">Call %s%s</a>
-      <a class="btn btn-outline-light" href="/book-an-appointment/">How to book</a>
-    </div>
-    <div class="hero-dots" id="heroDots" role="group" aria-label="Choose hero image">%s</div>
-  </div>
-</section>''' % (slides, e(S['name']), e(S['tagline']), e(S['instructor']),
-                 S['phoneRaw'], e(S['phone']), ARROW, dots)
 
-def strip():
-    items = [("Private &amp; semi-private only", "No class floor. One person, or two."),
-             ("Mat, reformer, chair &amp; barrel", "Fully certified on the full apparatus."),
-             (e(S['street']), f"Downtown {e(S['city'])}. {e(S['parking'])}.")]
-    cells = ''.join(f'<div class="strip-item"><p class="k">{k}</p><p class="v">{v}</p></div>' for k, v in items)
-    return f'<section class="strip"><div class="wrap"><div class="strip-in">{cells}</div></div></section>'
+    rail = ''.join('<div><p class="k">%s</p><p class="v">%s</p></div>' % (k, v) for k, v in [
+        ("One to one, or two", "No class floor and no crowded schedule."),
+        ("Reformer, Cadillac, chair, barrel", "A fully equipped studio, not a mat in a corner."),
+        ("Teaching since %s" % S.get('teachingSince', 2008),
+         "In the Seacoast studio since %s." % S.get('studioSince', 2013))])
 
-def faq_section():
-    rows = ''.join(f'<details><summary>{e(q)}</summary><p>{e(a)}</p></details>' for q, a in S['faqs'])
-    return f'''<section class="section" id="faq">
-  <div class="wrap">
-    <div class="head" data-reveal><p class="eyebrow">Questions</p>
-      <h2 class="h2">Before you call.</h2></div>
-    <div class="faq" data-reveal>{rows}</div>
-  </div>
-</section>'''
+    rows = ''
+    for s in S['services'][:3]:
+        fig = ('<span class="fig">$%s<small>per %s</small></span>' % (s['price'], s['unit'])
+               if s['price'] else '<span class="fig" style="font-size:.95rem">Ask</span>')
+        rows += ('<div class="row"><h3 class="d3">%s</h3><p>%s</p>%s</div>'
+                 % (e(s['name']), e(s['desc']), fig))
 
-def cta_band():
-    return f'''<section class="section band cta-band">
-  <div class="wrap">
-    <p class="eyebrow eyebrow-light">Begin</p>
-    <h2 class="h2">Start with a free consultation.</h2>
-    <p class="lead">Thirty minutes, no charge, nothing to buy at the end of it. Call the studio and talk to Michele directly.</p>
-    <div class="hero-cta">
-      <a class="btn btn-light" href="tel:{S['phoneRaw']}">Call {e(S['phone'])}{ARROW}</a>
-      <a class="btn btn-outline-light" href="/book-an-appointment/">See how booking works</a>
-    </div>
-  </div>
-</section>'''
+    conds = ''.join('<div><dt>%s</dt><dd>%s</dd></div>' % (e(t), e(d)) for t, d in S['conditions'])
+    faqs = ''.join('<details><summary>%s</summary><p>%s</p></details>' % (e(q), e(a))
+                   for q, a in S['faqs'][:5])
 
-def contact_section():
-    return f'''<section class="section" id="visit">
-  <div class="wrap contact">
-    <div data-reveal>
-      <p class="eyebrow">Visit</p>
-      <h2 class="h2" style="margin-top:18px">{e(S['name'])}</h2>
-      <div class="cinfo">
-        <div><span class="lbl">Address</span><span class="val">{e(S['street'])}<br>{e(S['city'])}, {e(S['region'])} {e(S['zip'])}</span></div>
-        <div><span class="lbl">Parking</span><span class="val">{e(S['parking'])}</span></div>
-        <div><span class="lbl">Phone</span><a class="val" href="tel:{S['phoneRaw']}">{e(S['phone'])}</a></div>
-        <div><span class="lbl">Email</span><a class="val" href="mailto:{S['email']}">{e(S['email'])}</a></div>
-        <div><span class="lbl">Hours</span><span class="val">{e(S['hours'])}</span></div>
-      </div>
-    </div>
-    <div class="map" data-reveal>
-      <iframe src="https://www.google.com/maps?q={S['street'].replace(' ','+')}+{S['city']}+{S['region']}+{S['zip']}&output=embed"
-        loading="lazy" title="Map to {e(addr())}"></iframe>
-    </div>
-  </div>
-</section>'''
+    body = (
+    # hero — editorial split, photography bleeding right, no dark overlay
+    '<section class="hero"><div class="shell hero-grid">'
+    '<div class="hero-copy">'
+    '<h1 class="d1">A private studio on High Street, and an hour that is entirely yours.</h1>'
+    '<p class="lede">Reformer Pilates with %s — one to one, or with a partner. '
+    'Most people arrive because something hurts, something changed, or something they love doing '
+    'has started to cost them.</p>'
+    '<div class="hero-act"><a class="btn btn-pri" href="tel:%s">Call %s%s</a>'
+    '<a class="ln-b" href="/book-an-appointment/">How booking works%s</a></div>'
+    '<p class="hero-fine">Every new client starts with a free thirty-minute consultation. '
+    'Monday to Friday, by appointment.</p>'
+    '</div>'
+    '<div class="hero-media" id="heroSlides">%s'
+    '<div class="hero-dots" id="heroDots" role="group" aria-label="Choose photograph">%s</div>'
+    '</div></div></section>'
 
-# ─────────────────────────────────────────────────────────── pages
-def page_home():
-    cards = ''.join(f'''<article class="card">
-      <div class="card-img">{img(n, alt, sizes="(max-width:980px) 100vw, 33vw")}</div>
-      <div class="card-body"><h3 class="h3">{e(s['name'])}</h3><p>{e(s['desc'])}</p>
-        <p class="price">{"$"+str(s['price']) if s['price'] else "Ask"} <span>{"/ "+s['unit'] if s['unit'] else "/ about availability"}</span></p>
-      </div></article>'''
-      for s, n, alt in zip(S['services'][:3],
-                           ["studio-3","semi-private","mat-class-1"],
-                           ["A private reformer session","A semi-private session on the reformers","Mat work in the studio"]))
-    conds = ''.join(f'<div><span class="dot"></span><p>{e(t)}<small>{e(d)}</small></p></div>'
-                    for t, d in S['conditions'])
-    return shell('/', f"{S['name']} | {S['tagline']}",
-        f"Private and semi-private Reformer Pilates with {S['instructor']} at {addr()}. Back pain, rehabilitation, pre and postnatal, active aging. Free 30-minute consultation — call {S['phone']}.",
-        hero() + strip() + f'''
-<section class="section"><div class="wrap split">
-  <div data-reveal>
-    <p class="eyebrow">The studio</p>
-    <h2 class="h2">Pilates that starts with <span class="ital">your</span> body, not a routine.</h2>
-    <p class="lead" style="margin-top:22px">Most people arrive because something hurts, something changed, or something they love doing has started to cost them. A back that complains after a round of golf. A shoulder that never quite came back. A body six weeks after a C-section.</p>
-    <p class="lead" style="margin-top:16px">Because every session is private, nothing is generic. Michele watches how you actually move, builds the work around it, and adjusts the moment it needs adjusting.</p>
-    <p class="quote">&ldquo;10 times to feel, 20 times to notice, 30 times to change your body.&rdquo;</p>
-    <p class="quote-by">&mdash; Joseph Pilates</p>
-  </div>
-  <div class="fig" data-reveal>{img('hands-on-springs','Michele working hands-on with a client on the reformer')}</div>
-</div></section>
+    '<section class="rail"><div class="shell rail-in">%s</div></section>'
 
-<section class="section" style="background:var(--paper);border-top:1px solid var(--line);border-bottom:1px solid var(--line)">
-  <div class="wrap">
-    <div class="head" data-reveal><p class="eyebrow">Sessions</p>
-      <h2 class="h2">Ways to work together.</h2>
-      <p class="lead">Everything is by appointment, Monday to Friday. Reformer work is the core of the studio; mat, yoga and nutrition round it out.</p></div>
-    <div class="cards" data-reveal>{cards}</div>
-    <p style="margin-top:30px" data-reveal><a class="btn btn-ghost" href="/rates-and-services/">See all rates and services{ARROW}</a></p>
-  </div>
-</section>
+    # the approach
+    '<section class="band"><div class="shell duo duo-wide">'
+    '<div><span class="label">The studio</span>'
+    '<h2 class="d2" style="margin:14px 0 20px">Nothing here is a routine you follow.</h2>'
+    '<p class="lede">Because every session is private, Michele can watch how you actually move, '
+    'build the work around it, and change it the moment it needs changing. A back that complains '
+    'after a round of golf and a body six weeks after a C-section do not need the same hour.</p>'
+    '<p class="lede" style="margin-top:16px">On the reformer, spring tension does the work that '
+    'weights normally would. You can load a muscle hard without loading a knee, a hip or a spine '
+    'the same way — which is why it suits bodies that cannot simply go and lift heavier.</p>'
+    '<p style="margin-top:26px"><a class="ln-b" href="/what-is-pilates/">What Pilates actually does%s</a></p>'
+    '</div>'
+    '<figure class="ratio-45">%s</figure></div></section>'
 
-<section class="section"><div class="wrap">
-  <div class="head" data-reveal><p class="eyebrow">Who it is for</p>
-    <h2 class="h2">Most people here are working around something.</h2>
-    <p class="lead">Pilates builds strength without pounding your joints, which is exactly why it suits bodies that cannot simply go and lift heavier.</p></div>
-  <div class="fory" data-reveal>{conds}</div>
-  <p style="margin-top:32px" data-reveal><a class="btn btn-ghost" href="/what-is-pilates/">What is Pilates, and what is it good for?{ARROW}</a></p>
-</div></section>
+    # services as an editorial list
+    '<section class="band on-sand"><div class="shell">'
+    '<div class="sec-head"><span class="label">Sessions</span>'
+    '<h2 class="d2">Three ways to work together.</h2>'
+    '<p class="lede">Everything is by appointment, Monday to Friday. Reformer work is the core of '
+    'the studio; mat, yoga and nutrition round it out.</p></div>'
+    '<div class="list">%s</div>'
+    '<p style="margin-top:30px"><a class="ln-b" href="/rates-and-services/">All rates and services%s</a></p>'
+    '</div></section>'
 
-<section class="section" style="background:var(--paper);border-top:1px solid var(--line)">
-  <div class="wrap split">
-    <div class="fig" data-reveal>{img('michele-portrait','Michele McCauley at The Pilates Room')}</div>
-    <div data-reveal>
-      <p class="eyebrow">Your instructor</p>
-      <h2 class="h2" style="margin-top:18px">{e(S['instructor'])}</h2>
-      <p class="lead" style="margin-top:22px">Michele studied under Kathy Van Patten at the Movement Center of Boston and trained for her 200-hour yoga certification at the Nosara Yoga Institute in Costa Rica. She is a triathlete, a surfer, a dancer and a culinary school graduate &mdash; which is how nutrition ended up part of the studio too.</p>
-      <p style="margin-top:26px"><a class="btn btn-ghost" href="/about-the-pilates-room/">More about Michele{ARROW}</a></p>
-    </div>
-  </div>
-</section>
-''' + faq_section() + cta_band() + contact_section(),
-        schema=[local_business_schema(), faq_schema()], hero_preload=S['hero'][0][0])
+    # who it is for
+    '<section class="band"><div class="shell">'
+    '<div class="sec-head"><span class="label">Who it is for</span>'
+    '<h2 class="d2">Most people here are working around something.</h2></div>'
+    '<dl class="cond">%s</dl></div></section>'
+
+    # michele
+    '<section class="band on-sand"><div class="shell duo duo-flip">'
+    '<figure class="ratio-45">%s</figure>'
+    '<div><span class="label">Your instructor</span>'
+    '<h2 class="d2" style="margin:14px 0 20px">%s</h2>'
+    '<p class="lede">Michele studied under Kathy Van Patten at the Movement Center of Boston, and '
+    'trained for her 200-hour yoga certification at the Nosara Yoga Institute in Costa Rica. She is '
+    'a triathlete, a surfer, a dancer and a culinary school graduate — which is how nutrition, and '
+    'eventually a recipe blog, ended up part of the studio.</p>'
+    '<p style="margin-top:26px"><a class="ln-b" href="/about-the-pilates-room/">More about Michele%s</a></p>'
+    '</div></div></section>'
+
+    # faq
+    '<section class="band"><div class="shell">'
+    '<div class="sec-head"><h2 class="d2">Before you call.</h2></div>'
+    '<div class="faq">%s</div>'
+    '<p style="margin-top:28px" class="body-sm">More questions are answered on '
+    '<a class="ln" href="/book-an-appointment/" style="color:var(--blue)">the booking page</a>.</p>'
+    '</div></section>'
+
+    % (e(S['instructor']), S['phoneRaw'], e(S['phone']), ARR, ARR, slides, dots, rail, ARR,
+       pic('hands-on-springs', 'Michele guiding a client through springwork on the reformer',
+           '(max-width:1040px) 100vw, 42vw'),
+       rows, ARR, conds,
+       pic('michele-portrait', '%s at The Pilates Room' % S['instructor'],
+           '(max-width:1040px) 100vw, 46vw'),
+       e(S['instructor']), ARR, faqs)
+    ) + cta("Start with a free consultation.",
+            "Thirty minutes, no charge, and nothing to buy at the end of it.") + visit()
+
+    return shell('/', "%s | %s" % (S['name'], S['tagline']),
+        "Private and semi-private Reformer Pilates with %s at %s. Back pain, rehabilitation, "
+        "pre and postnatal, active aging. Free 30-minute consultation — call %s."
+        % (S['instructor'], addr(), S['phone']),
+        body, schema=[biz(), faq_schema()], preload=S['hero'][0][0])
+
 
 def page_rates():
-    tables = ''
+    ladders = ''
     for name, rows in S['rates'].items():
-        best = max(range(len(rows)), key=lambda i: rows[i][1])
-        body = ''.join(f'<div class="rate-row{" best" if i==2 else ""}"><span class="q">{e(q)}</span>'
-                       f'<span class="p">${v}</span></div>' for i, (q, v) in enumerate(rows))
-        per = round(rows[-1][1] / 10, 2)
-        tables += (f'<div class="rate-card"><h3 class="h3">{e(name)}</h3>'
-                   f'<p style="font-size:.88rem;color:var(--ink-soft);margin-top:7px">'
-                   f'{"One-on-one, by appointment" if "Private Reformer"==name else "Two people, priced per person"}</p>'
-                   f'<div style="margin-top:22px">{body}</div>'
-                   f'<p style="margin-top:20px;font-size:.84rem;color:var(--ink-soft)">Works out to ${per:g} a session at ten.</p></div>')
-    others = ''.join(f'<div><span class="dot"></span><p>{e(s["name"])}<small>{e(s["desc"])}</small></p></div>'
-                     for s in S['services'][2:])
-    return shell('/rates-and-services/', f"Rates & Services | {S['name']}",
-        f"Private Reformer Pilates from $85 and semi-private from $45 per person at {S['name']}, {addr()}. Mat Pilates, yoga and fitness nutrition. Free 30-minute consultation.",
-        f'''<section class="section"><div class="wrap">
-  <div class="head" data-reveal><p class="eyebrow">Rates &amp; Services</p>
-    <h2 class="h2">Straightforward pricing.</h2>
-    <p class="lead">Every new client starts with a free thirty-minute consultation. Most people begin with a package of five.</p></div>
-  <div class="rates" data-reveal>{tables}</div>
-  <div style="margin-top:clamp(3rem,6vw,5rem)" data-reveal>
-    <h3 class="h3" style="margin-bottom:8px">Also offered</h3>
-    <div class="fory" style="margin-top:18px">{others}</div>
-  </div>
-  <p style="margin-top:34px;font-size:.92rem;color:var(--ink-soft)" data-reveal>
-    Sessions are by appointment, Monday to Friday. A 24-hour cancellation policy applies.</p>
-</div></section>''' + cta_band() + contact_section(),
-        schema=[local_business_schema()])
+        items = ''.join('<div class="lr%s"><dt>%s</dt><dd>$%s</dd></div>'
+                        % (' lr-key' if i == 2 else '', e(q), v) for i, (q, v) in enumerate(rows))
+        per = rows[-1][1] / 10
+        sub = ("One to one, by appointment" if name.startswith("Private")
+               else "Two people, priced per person")
+        ladders += ('<div class="ladder"><h3 class="d3">%s</h3><p class="sub">%s</p>'
+                    '<dl>%s</dl><p class="note">Works out to $%g a session at ten.</p></div>'
+                    % (e(name), sub, items, per))
+
+    others = ''.join('<div class="row"><h3 class="d3">%s</h3><p>%s</p>'
+                     '<span class="fig" style="font-size:.95rem">Ask</span></div>'
+                     % (e(s['name']), e(s['desc'])) for s in S['services'][2:])
+
+    body = ('<section class="band-tight"><div class="shell">'
+            '<div class="sec-head"><span class="label">Rates &amp; services</span>'
+            '<h1 class="d1">What a session costs.</h1>'
+            '<p class="lede">Every new client starts with a free thirty-minute consultation, so you '
+            'can decide whether it is right for you before you buy anything. Most people then begin '
+            'with a package of five.</p></div>'
+            '<div class="ladders">%s</div>'
+            '<p class="body-sm" style="margin-top:28px;max-width:60ch">Sessions run Monday to Friday '
+            'by appointment. A 24-hour cancellation policy applies.</p>'
+            '</div></section>'
+            '<section class="band on-sand"><div class="shell">'
+            '<div class="sec-head"><h2 class="d2">Also offered.</h2>'
+            '<p class="lede">Alongside reformer work, and usually built into the same programme '
+            'rather than booked separately.</p></div>'
+            '<div class="list">%s</div></div></section>' % (ladders, others))
+
+    return shell('/rates-and-services/', "Rates &amp; Services | %s" % S['name'],
+        "Private Reformer Pilates from $85 and semi-private from $45 per person at %s, %s. "
+        "Mat Pilates, yoga and fitness nutrition. Free 30-minute consultation."
+        % (S['name'], addr()),
+        body + cta("Not sure which to book?",
+                   "Call and talk it through. The consultation is free and there is no obligation.")
+        + visit(), schema=[biz()])
+
 
 def page_book():
-    steps = ''.join(f'<li><span class="n">{i+1}</span><div><b>{e(t)}</b><p>{e(d)}</p></div></li>'
-                    for i, (t, d) in enumerate(S['bookSteps']))
-    return shell('/book-an-appointment/', f"Book an Appointment | {S['name']}",
-        f"Booking at {S['name']} is by phone. Call {S['phone']} to arrange a free 30-minute consultation with {S['instructor']} in {S['city']}, {S['region']}.",
-        f'''<section class="section"><div class="wrap">
-  <div class="head center" data-reveal><p class="eyebrow">Book an Appointment</p>
-    <h2 class="h2">Booking is a phone call.</h2>
-    <p class="lead center">There is no online calendar, and that is deliberate. Michele wants to hear what is going on with your body before she puts you on a reformer.</p></div>
-  <div style="max-width:760px;margin:0 auto" data-reveal>
-    <p style="text-align:center;margin-bottom:34px">
-      <a class="btn btn-primary" href="tel:{S['phoneRaw']}" style="font-size:1.05rem;padding:1.15em 2.4em">Call {e(S['phone'])}{ARROW}</a>
-    </p>
-    <ol class="steps">{steps}</ol>
-    <p style="margin-top:30px;font-size:.93rem;color:var(--ink-soft)">
-      Prefer to write? Email <a href="mailto:{S['email']}" style="color:var(--deep);border-bottom:1px solid currentColor">{e(S['email'])}</a>
-      and include a phone number — Michele will call you back.</p>
-  </div>
-</div></section>''' + contact_section(),
-        schema=[local_business_schema()])
+    steps = ''.join('<li><span class="n">%02d</span><div><h3 class="d3">%s</h3><p>%s</p></div></li>'
+                    % (i + 1, e(t), e(d)) for i, (t, d) in enumerate(S['bookSteps']))
+    faqs = ''.join('<details><summary>%s</summary><p>%s</p></details>' % (e(q), e(a))
+                   for q, a in S['faqs'])
+    body = ('<section class="band-tight"><div class="shell duo duo-wide">'
+            '<div><span class="label">Book an appointment</span>'
+            '<h1 class="d1" style="margin:14px 0 20px">Booking is a phone call.</h1>'
+            '<p class="lede">There is no online calendar, and that is deliberate. Michele would '
+            'rather hear what is going on with your body before she puts you on a reformer.</p>'
+            '<div class="hero-act"><a class="btn btn-pri" href="tel:%s">Call %s%s</a>'
+            '<a class="ln-b" href="mailto:%s">Or email the studio%s</a></div>'
+            '<p class="hero-fine">If she is teaching, leave a message with a number and she will '
+            'call you back.</p></div>'
+            '<figure class="ratio-32">%s</figure></div></section>'
+            '<section class="band on-sand"><div class="shell">'
+            '<div class="sec-head"><h2 class="d2">What happens next.</h2></div>'
+            '<ol class="steps">%s</ol></div></section>'
+            '<section class="band"><div class="shell">'
+            '<div class="sec-head"><h2 class="d2">Questions people ask first.</h2></div>'
+            '<div class="faq">%s</div></div></section>'
+            % (S['phoneRaw'], e(S['phone']), ARR, S['email'], ARR,
+               pic('semi-private', 'A semi-private session on the reformers',
+                   '(max-width:1040px) 100vw, 42vw'),
+               steps, faqs))
+    return shell('/book-an-appointment/', "Book an Appointment | %s" % S['name'],
+        "Booking at %s is by phone. Call %s to arrange a free 30-minute consultation with %s in %s, %s."
+        % (S['name'], S['phone'], S['instructor'], S['city'], S['region']),
+        body + visit(), schema=[biz(), faq_schema()])
+
 
 def page_about():
-    creds = ''.join(f'<li>{e(a)} <span>{e(b)}</span></li>' for a, b in S['credentials'])
-    return shell('/about-the-pilates-room/', f"About {S['instructor']} | {S['name']}",
-        f"{S['instructor']} is a certified Pilates instructor (mat, reformer, chair and barrel), ISSA personal trainer and fitness nutrition specialist, with a 200-hour yoga certification from the Nosara Yoga Institute.",
-        f'''<section class="section"><div class="wrap split">
-  <div data-reveal>
-    <p class="eyebrow">About</p>
-    <h2 class="h2" style="margin-top:18px">{e(S['instructor'])}</h2>
-    <p class="lead" style="margin-top:22px">Michele has built {e(S['name'])} around one idea: that a room with one teacher and one client in it can do things a class floor never can. She studied under Kathy Van Patten at the Movement Center of Boston, who she still calls her mentor, and trained for her 200-hour yoga certification at the Nosara Yoga Institute in Costa Rica.</p>
-    <p class="lead" style="margin-top:16px">Her background runs through muscle anatomy, movement and the body&ndash;mind connection, and through triathlon training, running, cycling, swimming, dancing and surfing. She is also a Johnson &amp; Wales culinary graduate, which is how nutrition and the recipe blog ended up part of the studio.</p>
-    <p class="lead" style="margin-top:16px">In practice that adds up to someone who can watch how you move, understand why it hurts, and know which piece of apparatus will help.</p>
-  </div>
-  <div class="fig" data-reveal>{img('michele-portrait','Michele McCauley at The Pilates Room')}</div>
-</div></section>
+    creds = ''.join('<div class="cr"><dt>%s</dt><dd>%s</dd></div>' % (e(a), e(b))
+                    for a, b in S['credentials'])
+    body = ('<section class="band-tight"><div class="shell duo">'
+            '<div><span class="label">About</span>'
+            '<h1 class="d1" style="margin:14px 0 20px">%s</h1>'
+            '<p class="lede">Michele has taught Pilates since %s, and has run The Pilates Room in '
+            'downtown Portsmouth since %s. She studied under Kathy Van Patten at the Movement Center '
+            'of Boston, who she still calls her mentor, and trained for her 200-hour yoga '
+            'certification at the Nosara Yoga Institute in Costa Rica.</p>'
+            '<p class="lede" style="margin-top:16px">Her background runs through muscle anatomy, '
+            'movement and the body&ndash;mind connection, and through triathlon training, running, '
+            'cycling, swimming, dancing and surfing. She is also a Johnson &amp; Wales culinary '
+            'graduate, which is how nutrition — and eventually the recipe blog — became part of the '
+            'studio.</p>'
+            '<p class="lede" style="margin-top:16px">What that adds up to in a session is someone who '
+            'can watch how you move, work out why it hurts, and know which piece of apparatus will '
+            'help.</p></div>'
+            '<figure class="ratio-45">%s</figure></div></section>'
+            '<section class="band on-sand"><div class="shell duo duo-wide">'
+            '<div><span class="label">Training</span>'
+            '<h2 class="d2" style="margin:14px 0 22px">Certifications.</h2>'
+            '<dl class="creds">%s</dl>'
+            '<p class="body-sm" style="margin-top:20px">Johnson &amp; Wales University, culinary '
+            'graduate (A.A.S.) &nbsp;·&nbsp; Southern New Hampshire University, B.S. Accounting '
+            '&amp; Finance</p></div>'
+            '<figure class="ratio-45">%s</figure></div></section>'
+            % (e(S['instructor']), S.get('teachingSince', 2008), S.get('studioSince', 2013),
+               pic('michele-portrait', '%s at The Pilates Room' % S['instructor'],
+                   '(max-width:1040px) 100vw, 46vw', prio=True),
+               creds,
+               pic('michele-plank', '%s demonstrating a side plank' % S['instructor'],
+                   '(max-width:1040px) 100vw, 38vw')))
+    return shell('/about-the-pilates-room/', "About %s | %s" % (S['instructor'], S['name']),
+        "%s is a certified Pilates instructor (mat, reformer, chair and barrel), ISSA personal "
+        "trainer and fitness nutrition specialist, teaching in Portsmouth NH since %s."
+        % (S['instructor'], S.get('studioSince', 2013)),
+        body + cta("Come and meet her first.",
+                   "The consultation is free and there is nothing to buy at the end of it.") + visit(),
+        schema=[biz(), {"@context": "https://schema.org", "@type": "Person",
+                        "name": S['instructor'], "jobTitle": "Certified Pilates Instructor",
+                        "worksFor": {"@id": S['url'] + "/#studio"},
+                        "alumniOf": ["Nosara Yoga Institute", "Johnson & Wales University",
+                                     "Southern New Hampshire University"],
+                        "knowsAbout": ["Pilates", "Reformer Pilates", "Yoga", "Fitness nutrition",
+                                       "Prenatal and postnatal exercise", "Active aging"]}],
+        preload='michele-portrait')
 
-<section class="section" style="background:var(--paper);border-top:1px solid var(--line);border-bottom:1px solid var(--line)">
-  <div class="wrap">
-    <div class="head" data-reveal><p class="eyebrow">Training</p><h2 class="h2">Certifications.</h2></div>
-    <ul class="creds" data-reveal style="max-width:760px">{creds}</ul>
-    <p style="margin-top:26px;font-size:.92rem;color:var(--ink-soft)" data-reveal>
-      Johnson &amp; Wales University, culinary graduate (A.A.S.) &nbsp;·&nbsp; Southern New Hampshire University, B.S. Accounting &amp; Finance</p>
-  </div>
-</section>
 
-<section class="section"><div class="wrap split">
-  <div class="fig" data-reveal>{img('michele-plank','Michele McCauley demonstrating a side plank')}</div>
-  <div class="fig" data-reveal>{img('equipment-detail','Reformer springs in the studio')}</div>
-</div></section>''' + cta_band() + contact_section(),
-        schema=[local_business_schema(),
-                {"@context":"https://schema.org","@type":"Person","name":S['instructor'],
-                 "jobTitle":"Certified Pilates Instructor",
-                 "worksFor":{"@id":S['url']+"/#studio"},
-                 "alumniOf":["Nosara Yoga Institute","Johnson & Wales University",
-                             "Southern New Hampshire University"],
-                 "knowsAbout":["Pilates","Reformer Pilates","Yoga","Fitness nutrition",
-                               "Prenatal and postnatal exercise","Active aging"]}])
+def page_pilates():
+    P = S['pilates']
+    secs = ''.join('<section class="gsec" id="s%d"><h2 class="d3">%s</h2><p>%s</p></section>'
+                   % (i, e(h), e(b)) for i, (h, b) in enumerate(P['sections']))
+    toc = ''.join('<a href="#s%d">%s</a>' % (i, e(h)) for i, (h, _b) in enumerate(P['sections']))
+    body = ('<section class="band-tight"><div class="shell">'
+            '<div class="sec-head"><span class="label">What is Pilates</span>'
+            '<h1 class="d1">Strength without the pounding.</h1>'
+            '<p class="lede">%s</p></div>'
+            '<div class="guide"><nav class="gtoc" aria-label="On this page">%s</nav>'
+            '<div>%s</div></div></div></section>' % (e(P['intro']), toc, secs))
+    return shell('/what-is-pilates/', "What is Pilates, and what is it good for? | %s" % S['name'],
+        "How Reformer Pilates builds strength without loading your joints — and what it does for "
+        "back and SI joint pain, scoliosis, active aging, athletes, and pre and postnatal recovery.",
+        body + cta("Still not sure it is for you?",
+                   "That is exactly what the free consultation is for."),
+        schema=[biz(), {"@context": "https://schema.org", "@type": "Article",
+                        "headline": "What is Pilates, and what is it good for?",
+                        "about": "Reformer Pilates",
+                        "author": {"@type": "Person", "name": S['instructor']},
+                        "publisher": {"@id": S['url'] + "/#studio"},
+                        "articleSection": [h for h, _b in P['sections']]}])
 
-RECIPES = json.load(open(os.path.join(ROOT, 'content', 'recipes-raw.json')))
-RECIPES.sort(key=lambda r: r.get('date') or '', reverse=True)
-
-def rimg(slug, alt, sizes, prio=False):
-    return ('<img src="/assets/img/recipes/%s.jpg" srcset="/assets/img/recipes/%s@560.jpg 560w, '
-            '/assets/img/recipes/%s.jpg 1000w" sizes="%s" alt="%s" %s decoding="async">'
-            % (slug, slug, slug, sizes, e(alt),
-               'fetchpriority="high"' if prio else 'loading="lazy"'))
-
+# ───────────────────────────────────────────────────────── recipes
 def recipe_times(rec):
     out = []
     for label, field in (("Prep", "prep_time"), ("Cook", "cook_time")):
@@ -420,67 +471,56 @@ def recipe_times(rec):
     if cv and cl: out.append((cl, cv))
     tv = R.mins(rec.get('total_time'))
     if tv: out.append(("Total", tv))
+    if rec.get('servings'):
+        out.append(("Serves", ("%s %s" % (rec['servings'], rec.get('servings_unit') or '')).strip()))
     return out
 
 def page_recipe(r):
     rec, slug = r['recipe'], r['slug']
     title = R.strip_tags(r['title']['rendered'])
     summary = R.strip_tags(rec.get('summary'))
+    facts = ''.join('<div><dt>%s</dt><dd>%s</dd></div>' % (e(l), e(v)) for l, v in recipe_times(rec))
+    tags = R.taxa(rec, 'course') + R.taxa(rec, 'cuisine')
 
-    times = ''.join('<div><span class="rl">%s</span><span class="rv">%s</span></div>' % (e(l), e(v))
-                    for l, v in recipe_times(rec))
-    chips = []
-    if rec.get('servings'):
-        chips.append(("Servings", ("%s %s" % (rec['servings'], rec.get('servings_unit') or '')).strip()))
-    for c in R.taxa(rec, 'course'):  chips.append(("Course", c))
-    for c in R.taxa(rec, 'cuisine'): chips.append(("Cuisine", c))
-    chip_html = ''.join('<span class="chip"><i>%s</i> %s</span>' % (e(k), e(v)) for k, v in chips)
-
-    ing_html = ''
+    ings = ''
     for kind, amt, name, note in R.parse_ingredients(rec):
         if kind == 'heading':
-            ing_html += '<li class="ing-h">%s</li>' % e(amt or name)
+            ings += '<li class="gh">%s</li>' % e(amt or name)
         else:
-            ing_html += ('<li>%s<span>%s</span>%s</li>'
-                         % ('<b>%s</b> ' % e(amt) if amt else '', e(name),
-                            ' <i>%s</i>' % e(note) if note else ''))
-
-    step_html, n = '', 0
+            ings += ('<li>%s%s%s</li>' % ('<b>%s</b> ' % e(amt) if amt else '', e(name),
+                                          ' <i>%s</i>' % e(note) if note else ''))
+    steps, n = '', 0
     for kind, text in R.parse_steps(rec):
         if kind == 'heading':
-            step_html += '<li class="step-h">%s</li>' % e(text)
+            steps += '<li class="gh">%s</li>' % e(text)
         else:
             n += 1
-            step_html += '<li><span class="sn">%d</span><p>%s</p></li>' % (n, e(text))
+            steps += '<li><span class="sn">%02d</span><p>%s</p></li>' % (n, e(text))
 
     notes = R.strip_tags(rec.get('notes'))
-    notes_html = ('<section class="rsec"><h2 class="h3">Notes</h2><p class="rnote">%s</p></section>'
-                  % e(notes)) if notes else ''
-    equip = [q.get('name') for q in (rec.get('equipment') or []) if q.get('name')]
-    equip_html = ('<section class="rsec"><h2 class="h3">Equipment</h2><ul class="plain">%s</ul></section>'
-                  % ''.join('<li>%s</li>' % e(q) for q in equip)) if equip else ''
-
-    body = ('<article class="recipe"><div class="wrap">'
-            '<p class="crumb"><a href="/the-culinary-greenhouse/">&larr; The Culinary Greenhouse</a></p>'
-            '<div class="rhead"><div class="rhead-img">%s</div><div><h1 class="h2">%s</h1>%s'
-            '<div class="chips">%s</div></div></div>%s'
-            '<div class="rbody">'
-            '<section class="rsec"><h2 class="h3">Ingredients</h2><ul class="ings">%s</ul></section>'
-            '<div><section class="rsec"><h2 class="h3">Method</h2><ol class="steps-r">%s</ol></section>%s%s</div>'
-            '</div></div></article>'
-            % (rimg(slug, title, "(max-width:860px) 100vw, 400px", prio=True),
-               e(title),
-               '<p class="lead" style="margin-top:16px">%s</p>' % e(summary) if summary else '',
-               chip_html,
-               '<div class="rtimes">%s</div>' % times if times else '',
-               ing_html, step_html, equip_html, notes_html))
-
+    body = ('<article class="shell article">'
+            '<a class="crumb" href="/the-culinary-greenhouse/">&larr;&nbsp; The Culinary Greenhouse</a>'
+            '<div class="r-head"><div><h1 class="d2">%s</h1>%s%s</div>'
+            '<figure>%s</figure></div>'
+            '%s'
+            '<div class="r-body">'
+            '<div class="r-ings"><h2 class="d3">Ingredients</h2><ul>%s</ul></div>'
+            '<div class="r-steps"><h2 class="d3">Method</h2><ol>%s</ol>%s</div>'
+            '</div></article>'
+            % (e(title),
+               ('<p class="lede" style="margin-top:14px">%s</p>' % e(summary)
+                if summary and summary.strip().lower() != title.strip().lower() else ''),
+               '<p class="meta" style="margin-top:16px">%s</p>' % e(' · '.join(tags)) if tags else '',
+               rpic(slug, title, '(max-width:1040px) 100vw, 50vw', prio=True),
+               '<dl class="r-facts">%s</dl>' % facts if facts else '',
+               ings, steps,
+               '<div class="r-note">%s</div>' % e(notes) if notes else ''))
     desc = summary or ("%s — a recipe from The Culinary Greenhouse at %s." % (title, S['name']))
     return shell('/the-culinary-greenhouse/%s/' % slug,
                  "%s | The Culinary Greenhouse" % title, desc[:300],
-                 body + cta_band(),
-                 schema=[R.recipe_schema(r, S, "%s/assets/img/recipes/%s.jpg" % (S['url'], slug)),
-                         local_business_schema()])
+                 body + cta("Pilates, as well as the cooking.",
+                            "Private and semi-private reformer sessions in downtown Portsmouth."),
+                 schema=[R.recipe_schema(r, S, "%s/assets/img/recipes/%s.jpg" % (S['url'], slug)), biz()])
 
 def page_recipe_index():
     cards = ''
@@ -489,44 +529,53 @@ def page_recipe_index():
         title = R.strip_tags(r['title']['rendered'])
         summary = R.strip_tags(rec.get('summary'))
         t = R.mins(rec.get('total_time'))
-        cards += ('<a class="card" href="/the-culinary-greenhouse/%s/">'
-                  '<div class="card-img">%s</div><div class="card-body">'
-                  '<h3 class="h3">%s</h3><p>%s</p>%s</div></a>'
-                  % (slug, rimg(slug, title, "(max-width:980px) 100vw, 33vw"), e(title), e(summary),
-                     '<p class="rmeta">%s total</p>' % e(t) if t else ''))
-    body = ('<section class="section"><div class="wrap">'
-            '<div class="head center" data-reveal><p class="eyebrow">The Culinary Greenhouse</p>'
-            '<h2 class="h2">Recipes from the studio.</h2>'
-            '<p class="lead center">Michele is a Johnson &amp; Wales culinary graduate and an ISSA '
-            'fitness nutrition specialist. These are the recipes she actually cooks.</p></div>'
-            '<div class="cards" data-reveal>%s</div></div></section>' % cards)
+        cards += ('<a class="rcard" href="/the-culinary-greenhouse/%s/">'
+                  '<figure>%s</figure><div><h3 class="d3">%s</h3>%s%s</div></a>'
+                  % (slug, rpic(slug, title, '(max-width:760px) 100vw, (max-width:1040px) 50vw, 33vw'),
+                     e(title),
+                     ('<p style="margin-top:7px">%s</p>' % e(summary)
+                      if summary and summary.strip().lower() != title.strip().lower() else ''),
+                     '<p class="meta">%s total</p>' % e(t) if t else ''))
+    body = ('<section class="band-tight"><div class="shell">'
+            '<div class="sec-head" style="max-width:40rem"><span class="label">The Culinary Greenhouse</span>'
+            '<h1 class="d1">What Michele cooks.</h1>'
+            '<p class="lede">She is a Johnson &amp; Wales culinary graduate and an ISSA fitness '
+            'nutrition specialist, so the food side of the studio is not an afterthought. These are '
+            'the recipes she actually makes.</p></div>'
+            '<div class="rgrid">%s</div></div></section>' % cards)
     return shell('/the-culinary-greenhouse/', "The Culinary Greenhouse | %s" % S['name'],
-        "Recipes from %s, a Johnson & Wales culinary graduate and ISSA fitness nutrition specialist at %s in %s, %s."
-        % (S['instructor'], S['name'], S['city'], S['region']),
-        body + cta_band(),
-        schema=[local_business_schema(),
-                {"@context": "https://schema.org", "@type": "CollectionPage",
-                 "name": "The Culinary Greenhouse", "isPartOf": {"@id": S['url'] + "/#studio"},
-                 "hasPart": [{"@type": "Recipe", "name": R.strip_tags(r['title']['rendered']),
-                              "url": "%s/the-culinary-greenhouse/%s/" % (S['url'], r['slug'])}
-                             for r in RECIPES]}])
+        "Recipes from %s, a Johnson & Wales culinary graduate and ISSA fitness nutrition "
+        "specialist at %s in %s, %s." % (S['instructor'], S['name'], S['city'], S['region']),
+        body + cta("The studio side of things.",
+                   "Private and semi-private Reformer Pilates, by appointment."),
+        schema=[biz(), {"@context": "https://schema.org", "@type": "CollectionPage",
+                        "name": "The Culinary Greenhouse", "isPartOf": {"@id": S['url'] + "/#studio"},
+                        "hasPart": [{"@type": "Recipe", "name": R.strip_tags(r['title']['rendered']),
+                                     "url": "%s/the-culinary-greenhouse/%s/" % (S['url'], r['slug'])}
+                                    for r in RECIPES]}])
+
+PAGES = [page_home, page_rates, page_book, page_about, page_pilates, page_recipe_index]
+
+# ───────────────────────────────────────────────────────── redirects
+def redirect_stub(target, title):
+    return ('<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">'
+            '<title>%s</title><link rel="canonical" href="%s%s">'
+            '<meta name="robots" content="noindex,follow">'
+            '<meta http-equiv="refresh" content="0; url=%s">'
+            '<script>location.replace("%s")</script></head>'
+            '<body><p>This page has moved. <a href="%s">Continue</a>.</p></body></html>'
+            % (e(title), S['url'], target, target, target, target))
 
 def build_redirects():
-    """Point every retired WordPress URL at whatever now covers it."""
     src = os.path.join(ROOT, 'content', 'posts-raw.json')
     if not os.path.exists(src):
         return []
     posts = json.load(open(src))
     live = {r['slug'] for r in RECIPES}
-
-    # explicit wins first — these do not classify cleanly by keyword
-    EXPLICIT = {
-        'rates-services': '/rates-and-services/',
-        'beach-yoga-booking-groups-now': '/rates-and-services/',
-        'beach-yoga-is-simply-blissful': '/rates-and-services/',
-        'sound-healing-workshop': '/',
-        '832-2': '/',
-    }
+    EXPLICIT = {'rates-services': '/rates-and-services/',
+                'beach-yoga-booking-groups-now': '/rates-and-services/',
+                'beach-yoga-is-simply-blissful': '/rates-and-services/',
+                'sound-healing-workshop': '/', '832-2': '/'}
     FOOD = ('recipe','vegan','vegetarian','salad','soup','smoothie','cookie','brownie','tofu',
             'chicken','sprout','squash','beet','taco','donut','stew','tempeh','kale','pizza',
             'detox','hummus','sushi','curry','pasta','spring-roll','ice-cream','food','eat',
@@ -535,7 +584,6 @@ def build_redirects():
             'dessert','bread','sauce','drink','juice','tea','coffee','wedding')
     PILATES = ('pilates','reformer','scoliosis','core','posture','joint','back','stretch',
                'yoga','natal','aging','age-50','athlete','golf','injur','strength')
-
     out = []
     for post in posts:
         slug = post['slug']
@@ -550,56 +598,15 @@ def build_redirects():
         elif any(k in hay for k in PILATES):
             target = '/what-is-pilates/'
         else:
-            target = '/'          # never guess — send it to the homepage
+            target = '/'
         out.append((slug, target))
         write('/%s/' % slug, redirect_stub(target, title))
     return out
 
-def page_pilates():
-    P = S['pilates']
-    secs = ''
-    for i, (h, body) in enumerate(P['sections']):
-        secs += ('<section class="psec" id="s%d"><h2 class="h3">%s</h2><p>%s</p></section>'
-                 % (i, e(h), e(body)))
-    toc = ''.join('<a href="#s%d">%s</a>' % (i, e(h)) for i, (h, _b) in enumerate(P['sections']))
-    body = ('<section class="section"><div class="wrap">'
-            '<div class="head" data-reveal><p class="eyebrow">What is Pilates</p>'
-            '<h1 class="h2">Strength without the pounding.</h1>'
-            '<p class="lead">%s</p></div>'
-            '<div class="pwrap">'
-            '<nav class="ptoc" aria-label="On this page" data-reveal>%s</nav>'
-            '<div data-reveal>%s</div>'
-            '</div></div></section>' % (e(P['intro']), toc, secs))
-    return shell('/what-is-pilates/', "What is Pilates, and what is it good for? | %s" % S['name'],
-        "How Reformer Pilates builds strength without loading your joints — and what it does for back and SI joint pain, scoliosis, active aging, athletes, and pre and postnatal recovery. %s, %s."
-        % (S['name'], S['city']),
-        body + cta_band(),
-        schema=[local_business_schema(),
-                {"@context": "https://schema.org", "@type": "Article",
-                 "headline": "What is Pilates, and what is it good for?",
-                 "about": "Reformer Pilates",
-                 "author": {"@type": "Person", "name": S['instructor']},
-                 "publisher": {"@id": S['url'] + "/#studio"},
-                 "articleSection": [h for h, _b in P['sections']]}])
-
-PAGES = [page_home, page_rates, page_book, page_about, page_pilates, page_recipe_index]
-
-# Retired WordPress posts keep their URLs and point at whatever replaced them.
-# GitHub Pages cannot serve a true 301, so these are instant meta-refresh stubs
-# with a canonical — which Google follows and treats as a redirect.
-def redirect_stub(target, title):
-    return ('<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">'
-            '<title>%s</title><link rel="canonical" href="%s%s">'
-            '<meta name="robots" content="noindex,follow">'
-            '<meta http-equiv="refresh" content="0; url=%s">'
-            '<script>location.replace("%s")</script></head>'
-            '<body><p>This page has moved. <a href="%s">Continue</a>.</p></body></html>'
-            % (e(title), S['url'], target, target, target, target))
-
 def sitemap(paths):
-    urls = ''.join('<url><loc>%s%s</loc></url>' % (S['url'], p) for p in paths)
     return ('<?xml version="1.0" encoding="UTF-8"?>'
-            '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">%s</urlset>' % urls)
+            '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">%s</urlset>'
+            % ''.join('<url><loc>%s%s</loc></url>' % (S['url'], p) for p in paths))
 
 def main():
     written, paths = [], []
@@ -615,13 +622,8 @@ def main():
     open(os.path.join(ROOT, 'robots.txt'), 'w').write(
         'User-agent: *\nDisallow: /\n' if PREVIEW
         else 'User-agent: *\nAllow: /\n\nSitemap: %s/sitemap.xml\n' % S['url'])
-    for p in written:
-        print("  %-52s %d KB" % (os.path.relpath(p, ROOT), os.path.getsize(p) // 1024))
-    from collections import Counter
     print("%d pages, %d redirect stubs, sitemap with %d urls"
           % (len(written), len(stubs), len(paths)))
-    for t, n in Counter(t for _s, t in stubs).most_common():
-        print("    %-28s %d" % (t, n))
 
 if __name__ == '__main__':
     main()
