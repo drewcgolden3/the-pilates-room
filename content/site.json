@@ -1,0 +1,238 @@
+{
+  "name": "The Pilates Room",
+  "tagline": "Private Reformer Pilates in Portsmouth, New Hampshire",
+  "url": "https://thepilatesroomnh.com",
+  "instructor": "Michele McCauley",
+  "phone": "(603) 817-4829",
+  "phoneRaw": "+16038174829",
+  "email": "info@thepilatesroomnh.com",
+  "street": "410 High Street",
+  "city": "Portsmouth",
+  "region": "NH",
+  "zip": "03801",
+  "lat": 43.0759,
+  "lon": -70.7636,
+  "hours": "Monday to Friday, by appointment",
+  "hoursSpec": [
+    [
+      "Monday",
+      "Friday",
+      "08:00",
+      "19:00"
+    ]
+  ],
+  "priceRange": "$$",
+  "parking": "Free parking behind the building",
+  "social": [
+    "https://www.facebook.com/SeacoastYogaandPilates/",
+    "https://www.youtube.com/user/michmccauley"
+  ],
+  "services": [
+    {
+      "name": "Private Reformer Pilates",
+      "price": 85,
+      "unit": "session",
+      "desc": "One hour, one-on-one on the reformer, built entirely around your body and your history."
+    },
+    {
+      "name": "Semi-Private Reformer Pilates",
+      "price": 45,
+      "unit": "person",
+      "desc": "The same hour and the same attention, shared with one other person."
+    },
+    {
+      "name": "Mat Pilates",
+      "price": null,
+      "unit": null,
+      "desc": "Classical mat work, suited to every level from beginner to advanced."
+    },
+    {
+      "name": "Yoga",
+      "price": null,
+      "unit": null,
+      "desc": "A 200-hour trained practice, including seasonal outdoor classes on the Seacoast."
+    },
+    {
+      "name": "Fitness Nutrition",
+      "price": null,
+      "unit": null,
+      "desc": "Nutrition guidance from an ISSA Fitness Nutrition Specialist and culinary school graduate."
+    }
+  ],
+  "rates": {
+    "Private Reformer": [
+      [
+        "Single session",
+        85
+      ],
+      [
+        "3 sessions",
+        250
+      ],
+      [
+        "5 sessions",
+        380
+      ],
+      [
+        "10 sessions",
+        675
+      ]
+    ],
+    "Semi-Private Reformer": [
+      [
+        "Single session",
+        45
+      ],
+      [
+        "3 sessions",
+        130
+      ],
+      [
+        "5 sessions",
+        225
+      ],
+      [
+        "10 sessions",
+        360
+      ]
+    ]
+  },
+  "credentials": [
+    [
+      "Certified Pilates Instructor",
+      "mat, reformer, chair and barrel"
+    ],
+    [
+      "ISSA Certified Personal Trainer",
+      "ISSA"
+    ],
+    [
+      "Fitness Nutrition Specialist",
+      "ISSA, including sports nutrition"
+    ],
+    [
+      "200-Hour Yoga Certification",
+      "Nosara Yoga Institute, Costa Rica"
+    ],
+    [
+      "Rasamaya Method",
+      "Carrie Tyler"
+    ],
+    [
+      "CPR / AED and First Aid",
+      "American Red Cross"
+    ]
+  ],
+  "conditions": [
+    [
+      "Back pain",
+      "The most common reason people walk in, and the most common thing that changes."
+    ],
+    [
+      "Shoulder, knee and hip rehabilitation",
+      "Rebuilding strength and range after injury or surgery."
+    ],
+    [
+      "Pre and postnatal",
+      "Including C-section recovery and diastasis recti."
+    ],
+    [
+      "Osteoporosis and rheumatoid arthritis",
+      "Joint-friendly loading and bone-supporting work."
+    ],
+    [
+      "Active aging",
+      "Staying strong enough to keep walking, swimming, golfing and gardening."
+    ],
+    [
+      "Athletes",
+      "Tennis, golf, cycling and running \u2014 core strength, balance and flexibility."
+    ]
+  ],
+  "faqs": [
+    [
+      "Do I need to be fit or flexible to start?",
+      "No. Most people arrive because something hurts or because they have been away from exercise for a while. Every session is private, so the work starts wherever your body actually is."
+    ],
+    [
+      "I have back pain. Is Pilates safe for me?",
+      "Back pain is the single most common reason people come to the studio. Pilates builds strength without loading the joints, which is why it suits bodies that cannot simply go and lift heavier. Michele will talk through your history before you begin."
+    ],
+    [
+      "What happens in the free consultation?",
+      "Thirty minutes, at no charge. You talk through your goals, your injuries and what you want to get back to doing, and you leave with a clear recommendation. There is nothing to buy at the end of it."
+    ],
+    [
+      "Do you teach group classes?",
+      "The studio is private and semi-private only \u2014 one person, or two. There is no class floor and no crowded schedule."
+    ],
+    [
+      "Can I train with a partner?",
+      "Yes. Semi-private sessions are $45 per person for the same hour and the same attention."
+    ],
+    [
+      "Where do I park?",
+      "There is free parking behind the building at 410 High Street, in downtown Portsmouth."
+    ],
+    [
+      "Do you work with women who are pregnant or postpartum?",
+      "Yes, including C-section recovery and diastasis recti. Pre and postnatal work is a regular part of the studio."
+    ]
+  ],
+  "navLeft": [
+    [
+      "/rates-and-services/",
+      "Rates & Services"
+    ],
+    [
+      "/book-an-appointment/",
+      "Book an Appointment"
+    ]
+  ],
+  "navRight": [
+    [
+      "/about-the-pilates-room/",
+      "About"
+    ],
+    [
+      "/the-culinary-greenhouse/",
+      "Recipe Blog"
+    ]
+  ],
+  "hero": [
+    [
+      "hands-on-springs",
+      "Michele guiding a client through springwork on the reformer"
+    ],
+    [
+      "reformer-solo",
+      "A reformer session in the studio at 410 High Street"
+    ],
+    [
+      "beach-yoga-class",
+      "A Seacoast outdoor yoga class on the rocks"
+    ],
+    [
+      "mat-class-2",
+      "A mat class on the studio floor"
+    ]
+  ],
+  "bookSteps": [
+    [
+      "Call the studio",
+      "Ring (603) 817-4829 and tell Michele what you are hoping to work on. If she is teaching, leave a message and she will call you back the same day."
+    ],
+    [
+      "Book your free consultation",
+      "Thirty minutes, at no charge. You talk through your history, your injuries and what you want to get back to doing."
+    ],
+    [
+      "Agree on a plan",
+      "You leave with a clear recommendation \u2014 how often, which apparatus, and roughly how long before it feels different. Nothing to buy on the spot."
+    ],
+    [
+      "Schedule your first session",
+      "Sessions run Monday to Friday by appointment. Park free behind the building and arrive a few minutes early."
+    ]
+  ]
+}
