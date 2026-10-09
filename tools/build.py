@@ -52,7 +52,7 @@ def local_business_schema():
         "@id": S['url'] + "/#studio",
         "name": S['name'], "description": S['tagline'], "url": S['url'] + "/",
         "telephone": S['phoneRaw'], "email": S['email'], "priceRange": S['priceRange'],
-        "image": S['url'] + "/assets/img/reformer-solo.jpg",
+        "image": S['url'] + "/assets/img/hands-on-springs.jpg",
         "logo": S['url'] + "/assets/img/logo.png",
         "address": {"@type": "PostalAddress", "streetAddress": S['street'],
                     "addressLocality": S['city'], "addressRegion": S['region'],
@@ -149,7 +149,7 @@ def shell(path, title, desc, body, schema=None, hero_preload=None):
 <meta property="og:title" content="{e(title)}">
 <meta property="og:description" content="{e(desc)}">
 <meta property="og:url" content="{canon}">
-<meta property="og:image" content="{S['url']}/assets/img/reformer-solo.jpg">
+<meta property="og:image" content="{S['url']}/assets/img/hands-on-springs.jpg">
 <meta property="og:locale" content="en_US">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="/assets/img/logo.png">
@@ -180,26 +180,29 @@ def write(path, text):
 # ─────────────────────────────────────────────────────────── sections
 def hero():
     slides = ''.join(
-        f'<figure{" class=on" if i==0 else ""}>'
-        f'<img src="/assets/img/{n}.jpg" srcset="/assets/img/{n}@700.jpg 700w, /assets/img/{n}.jpg 1400w" '
-        f'sizes="100vw" alt="{e(alt)}" {"fetchpriority=high" if i==0 else "loading=lazy"} decoding="async">'
-        f'</figure>' for i, (n, alt) in enumerate(S['hero']))
-    dots = ''.join(f'<button type="button" aria-label="Show image {i+1}" '
-                   f'aria-current="{"true" if i==0 else "false"}"></button>'
-                   for i in range(len(S['hero'])))
-    return f'''<section class="hero">
-  <div class="hero-slides" id="heroSlides">{slides}</div>
+        '<figure%s><img src="/assets/img/%s.jpg" srcset="/assets/img/%s@700.jpg 700w, '
+        '/assets/img/%s.jpg 1400w" sizes="100vw" alt="%s" %s decoding="async"></figure>'
+        % (' class="on"' if i == 0 else '', n, n, n, e(alt),
+           'fetchpriority="high"' if i == 0 else 'loading="lazy"')
+        for i, (n, alt) in enumerate(S['hero']))
+    dots = ''.join('<button type="button" aria-label="Show image %d" aria-current="%s"></button>'
+                   % (i + 1, 'true' if i == 0 else 'false') for i in range(len(S['hero'])))
+    return '''<section class="hero">
+  <div class="hero-slides" id="heroSlides">%s</div>
   <div class="wrap hero-in">
-    <p class="eyebrow eyebrow-light">{e(S['tagline'])}</p>
+    <img class="hero-logo" src="/assets/img/logo.png" width="597" height="316"
+         alt="%s" fetchpriority="high">
+    <p class="eyebrow eyebrow-light">%s</p>
     <h1 class="h1">One room, one teacher, and your full hour.</h1>
-    <p class="lead">Private and semi-private Reformer Pilates with {e(S['instructor'])} — built around your body, your injuries, and what you want to get back to doing.</p>
+    <p class="lead">Private and semi-private Reformer Pilates with %s &mdash; built around your body, your injuries, and what you want to get back to doing.</p>
     <div class="hero-cta">
-      <a class="btn btn-primary" href="tel:{S['phoneRaw']}">Call {e(S['phone'])}{ARROW}</a>
+      <a class="btn btn-light" href="tel:%s">Call %s%s</a>
       <a class="btn btn-outline-light" href="/book-an-appointment/">How to book</a>
     </div>
-    <div class="hero-dots" id="heroDots" role="group" aria-label="Choose hero image">{dots}</div>
+    <div class="hero-dots" id="heroDots" role="group" aria-label="Choose hero image">%s</div>
   </div>
-</section>'''
+</section>''' % (slides, e(S['name']), e(S['tagline']), e(S['instructor']),
+                 S['phoneRaw'], e(S['phone']), ARROW, dots)
 
 def strip():
     items = [("Private &amp; semi-private only", "No class floor. One person, or two."),
