@@ -105,7 +105,7 @@ def header(path):
                   for h, l in links)
     mob = ''.join('<a href="%s">%s</a>' % (h, e(l)) for h, l in links)
     return ('<header class="hdr"><div class="shell hdr-in">'
-            '<a class="hdr-logo" href="/" aria-label="%s — home">'
+            '<a class="hdr-logo" id="navLogoTarget" href="/" aria-label="%s — home">'
             '<img src="/assets/img/logo.png" width="158" height="84" alt="%s"></a>'
             '<nav aria-label="Primary">%s</nav>'
             '<div class="hdr-call"><a class="hdr-tel" href="tel:%s">%s</a>'
@@ -248,8 +248,10 @@ def page_home():
     '<div class="hero-bg">%s</div>'
     '<div class="shell hero-inner">'
     '<p class="hero-eyebrow">Portsmouth, New Hampshire &nbsp;·&nbsp; Since %s</p>'
-    '<h1 class="hero-mark"><img src="/assets/img/logo.png" width="597" height="316" '
-    'alt="%s" fetchpriority="high"></h1>'
+    '<h1 class="hero-mark"><span class="hero-logo-slot">'
+    '<span class="hero-logo" id="heroLogo">'
+    '<img src="/assets/img/logo.png" width="597" height="316" alt="%s" fetchpriority="high">'
+    '</span></span></h1>'
     '<p class="hero-tag">Feel the difference in one session.</p>'
     '<p class="hero-sub">A private studio on High Street, and an hour that is entirely yours. '
     'Book a class with instructor %s one-on-one, or with a partner.</p>'

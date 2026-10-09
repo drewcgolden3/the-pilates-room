@@ -127,40 +127,71 @@ p{margin:0}
 .mnav a:last-child{border-bottom:0;color:var(--blue);font-weight:600}
 
 /* ── full-bleed hero ────────────────────────────────────── */
-/* The header sits over the photograph on the homepage only. */
-body.home .hdr{position:absolute;top:0;left:0;right:0;background:transparent;
-  border-bottom:0;z-index:50;isolation:isolate}
-/* A blurred scrim that fades out downward, so the bar reads as part of the
-   photograph rather than a panel sitting on top of it. */
+/* On the homepage the bar is fixed and transparent over the photograph, then
+   resolves to ivory once you scroll past the hero. Fixed rather than absolute
+   because the flying logo needs somewhere that stays put to land. */
+body.home .hdr{position:fixed;top:0;left:0;right:0;background:transparent;
+  border-bottom:0;z-index:100;isolation:isolate;
+  transition:background-color .45s var(--ease),border-color .45s var(--ease)}
 body.home .hdr::before{content:"";position:absolute;inset:0 0 -56px;z-index:-1;pointer-events:none;
   backdrop-filter:blur(18px) saturate(115%);-webkit-backdrop-filter:blur(18px) saturate(115%);
   background:linear-gradient(to bottom,rgba(6,14,24,.58) 0%,rgba(6,14,24,.34) 48%,rgba(6,14,24,0) 100%);
   -webkit-mask-image:linear-gradient(to bottom,#000 0%,#000 46%,transparent 100%);
-  mask-image:linear-gradient(to bottom,#000 0%,#000 46%,transparent 100%)}
-body.home .hdr nav a,body.home .hdr-tel{color:rgba(255,255,255,.88)}
+  mask-image:linear-gradient(to bottom,#000 0%,#000 46%,transparent 100%);
+  opacity:1;transition:opacity .45s var(--ease)}
+body.home .hdr nav a,body.home .hdr-tel{color:rgba(255,255,255,.88);transition:color .45s var(--ease)}
 body.home .hdr nav a:hover,body.home .hdr-tel:hover{color:#fff}
 body.home .hdr nav a::after{background:#fff}
-body.home .hdr-call{border-left-color:rgba(255,255,255,.2)}
+body.home .hdr-call{border-left-color:rgba(255,255,255,.2);transition:border-color .45s var(--ease)}
 body.home .burger{border-color:rgba(255,255,255,.35)}
 body.home .burger span,body.home .burger span::before,body.home .burger span::after{background:#fff}
 body.home .mnav{background:var(--ivory)}
 
-.hero{position:relative;isolation:isolate;min-height:clamp(620px,90vh,900px);
-  display:grid;align-items:center;overflow:hidden;background:var(--ink)}
-.hero-bg{position:absolute;inset:0;z-index:-2}
+/* once past the hero the bar becomes a normal ivory header */
+body.home .hdr.solid{background:rgba(251,248,244,.94);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--rule-soft)}
+body.home .hdr.solid::before{opacity:0}
+body.home .hdr.solid nav a,body.home .hdr.solid .hdr-tel{color:var(--ink-2)}
+body.home .hdr.solid nav a:hover,body.home .hdr.solid .hdr-tel:hover{color:var(--ink)}
+body.home .hdr.solid nav a::after{background:var(--blue)}
+body.home .hdr.solid .hdr-call{border-left-color:var(--rule-soft)}
+body.home .hdr.solid .burger{border-color:var(--rule)}
+body.home .hdr.solid .burger span,
+body.home .hdr.solid .burger span::before,
+body.home .hdr.solid .burger span::after{background:var(--ink)}
+
+/* The header mark only reserves space on the homepage — the real logo flies
+   out of the hero and parks here. Without JS it stays hidden and the hero
+   keeps its logo, so there is never a second one. */
+body.home .hdr-logo{visibility:hidden}
+
+.hero-logo-slot{display:block;width:clamp(250px,34vw,500px);aspect-ratio:597/316;margin-inline:auto}
+.hero-logo{position:relative;display:block;width:100%;height:100%}
+.hero-logo img{width:100%;height:100%;object-fit:contain;
+  filter:drop-shadow(0 6px 26px rgba(0,0,0,.45));transition:filter .3s linear}
+.hero-logo.is-flying{position:fixed;left:0;right:0;margin-inline:auto;
+  width:clamp(250px,34vw,500px);height:auto;aspect-ratio:597/316;
+  z-index:101;transform-origin:50% 50%;will-change:transform;pointer-events:none}
+
+/* No isolation and no negative z-indexes here: the flying logo is a
+   descendant, and an isolated stacking context would trap it behind the
+   header instead of letting it land on top. */
+.hero{position:relative;min-height:clamp(620px,90vh,900px);
+  display:grid;align-items:center;background:var(--ink)}
+.hero-bg{position:absolute;inset:0;z-index:0;overflow:hidden}
+/* overlay lives inside the media layer, so .hero-inner needs no z-index —
+   giving it one would make it a stacking context and trap the flying logo */
+.hero-bg::after{content:"";position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(180deg,rgba(8,16,26,.72) 0%,rgba(8,16,26,.56) 40%,rgba(8,16,26,.74) 100%)}
 .hero-bg figure{position:absolute;inset:0;margin:0;opacity:0;transition:opacity 1.3s var(--ease)}
 .hero-bg figure.on{opacity:1}
 .hero-bg img{width:100%;height:100%;object-fit:cover;object-position:center top}
-/* strong enough to carry white type and let the blue logo read */
-.hero::after{content:"";position:absolute;inset:0;z-index:-1;
-  background:linear-gradient(180deg,rgba(8,16,26,.72) 0%,rgba(8,16,26,.56) 40%,rgba(8,16,26,.74) 100%)}
 
-.hero-inner{text-align:center;color:#fff;padding-block:clamp(7rem,13vh,9.5rem) clamp(3.5rem,7vh,5rem)}
+.hero-inner{position:relative;text-align:center;color:#fff;padding-block:clamp(7rem,13vh,9.5rem) clamp(3.5rem,7vh,5rem)}
 .hero-eyebrow{font-family:var(--display);font-size:.76rem;font-weight:600;letter-spacing:.2em;
   text-transform:uppercase;color:rgba(255,255,255,.72)}
 .hero-mark{margin:clamp(22px,3.2vh,34px) auto clamp(20px,2.8vh,30px);line-height:0}
-.hero-mark img{width:clamp(250px,34vw,500px);height:auto;margin-inline:auto;
-  filter:drop-shadow(0 6px 26px rgba(0,0,0,.45))}
 .hero-tag{font-family:var(--display);font-weight:700;letter-spacing:-.008em;
   font-size:clamp(1.5rem,3vw,2.25rem);line-height:1.2;color:#fff}
 .hero-sub{margin:16px auto 0;max-width:46ch;font-size:clamp(1rem,1.25vw,1.12rem);
