@@ -234,5 +234,48 @@
       "Schedule your first session",
       "Sessions run Monday to Friday by appointment. Park free behind the building and arrive a few minutes early."
     ]
-  ]
+  ],
+  "teachingSince": 2008,
+  "studioSince": 2013,
+  "pilates": {
+    "intro": "Pilates is a method of building strength that does not pound your joints. On the reformer, spring-loaded resistance does the work that weights would normally do, which means you can load a muscle hard without loading a knee, a hip or a spine the same way. It is a whole-body practice built on form, breath and control.",
+    "sections": [
+      [
+        "How the reformer works",
+        "The reformer is a sliding carriage under spring tension. Because you can dial the springs up or down, the same exercise can be made easier or harder for the body in front of it. That adjustability is the reason one piece of apparatus suits a beginner, an athlete and someone six weeks out of surgery. The studio is fully equipped \u2014 reformer, Cadillac, chair, barrel and mat."
+      ],
+      [
+        "What it actually improves",
+        "Strength, flexibility, balance, coordination and stamina, and the body\u2013mind awareness that ties them together. Most people notice the difference in posture and in how they move before they notice it in a mirror. Michele recommends practising twice a week; the old line is that it takes 10 times to feel it, 20 to notice it and 30 to change your body."
+      ],
+      [
+        "If you are starting from scratch",
+        "You do not need to be fit or flexible first. Pilates for beginners is an alternative to weight-bearing exercise that impacts the joints, and because sessions here are private, the work starts wherever your body actually is. You will feel the difference in one session; building real total-body strength takes a few weeks, depending on your starting point and how often you come."
+      ],
+      [
+        "Back, hip and SI joint pain",
+        "Back pain is the most common reason people walk into the studio. Reformer work builds the deep support around the spine and pelvis without compression, which is why it suits sacroiliac joint pain, sciatica and general low-back trouble that has not responded to rest."
+      ],
+      [
+        "Scoliosis and asymmetry",
+        "Pilates has helped clients living with scoliosis by working into the asymmetry rather than against it \u2014 strengthening one side, lengthening the other, and improving how the whole body organises itself around a curve."
+      ],
+      [
+        "Active aging and after fifty",
+        "Pilates is gentle on the joints and focuses on flexibility, balance and strength \u2014 the three things that keep you mobile and independent as you age. It adapts to any level and to specific limitations, which is exactly what most people need in their sixties and seventies."
+      ],
+      [
+        "Athletes, golfers and runners",
+        "Tennis players, golfers, cyclists and runners come for core strength, muscle awareness, coordination, balance and total body strength and flexibility. For golf in particular, rotation through the thoracic spine and a stable pelvis are worth more than another bucket of balls."
+      ],
+      [
+        "Pre and postnatal",
+        "Pilates is well suited to pregnancy and to recovery afterwards, including C-section recovery and diastasis recti. The work is adjusted trimester by trimester and rebuilt gradually postpartum."
+      ],
+      [
+        "Pilates or yoga?",
+        "They are not rivals and your body will benefit from either. Broadly: yoga works through held postures, breath and flexibility; Pilates works through controlled, repeated movement against resistance, with more emphasis on core strength and alignment. Michele teaches both, and will tell you honestly which one fits what you are trying to fix."
+      ]
+    ]
+  }
 }

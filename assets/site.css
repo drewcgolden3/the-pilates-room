@@ -228,3 +228,15 @@ a.card{color:inherit}
   .rhead-img img{aspect-ratio:3/2}
   .rbody{grid-template-columns:1fr}
 }
+
+/* ── what is pilates ─────────────────────────── */
+.pwrap{display:grid;grid-template-columns:230px 1fr;gap:clamp(2.2rem,5vw,4.5rem);align-items:start}
+.ptoc{position:sticky;top:124px;display:flex;flex-direction:column;gap:2px}
+.ptoc a{font-size:.87rem;color:var(--ink-soft);padding:7px 0 7px 14px;border-left:2px solid var(--line);transition:color .3s var(--hover),border-color .3s var(--hover)}
+.ptoc a:hover{color:var(--deep);border-left-color:var(--deep)}
+.psec{padding-bottom:clamp(2rem,3.6vw,2.8rem);margin-bottom:clamp(2rem,3.6vw,2.8rem);border-bottom:1px solid var(--line)}
+.psec:last-child{border-bottom:0;margin-bottom:0}
+.psec h2{margin-bottom:14px}
+.psec p{color:var(--ink-soft);max-width:68ch}
+@media (max-width:980px){ .pwrap{grid-template-columns:1fr} .ptoc{position:static;flex-direction:row;flex-wrap:wrap;gap:8px}
+  .ptoc a{border-left:0;border:1px solid var(--line);border-radius:999px;padding:7px 14px;font-size:.82rem} }

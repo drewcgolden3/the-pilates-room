@@ -91,7 +91,8 @@ def header(path):
 def footer():
     socials = ''.join(f'<a href="{u}" rel="noopener">{"Facebook" if "facebook" in u else "YouTube"}</a>'
                       for u in S['social'])
-    links = ''.join(f'<a href="{h}">{e(l)}</a>' for h, l in S['navLeft'] + S['navRight'])
+    links = ''.join(f'<a href="{h}">{e(l)}</a>'
+                    for h, l in S['navLeft'] + [['/what-is-pilates/', 'What is Pilates']] + S['navRight'])
     return f'''<footer class="ftr"><div class="wrap">
   <div class="ftr-top">
     <div>
@@ -272,6 +273,7 @@ def page_home():
     <h2 class="h2">Most people here are working around something.</h2>
     <p class="lead">Pilates builds strength without pounding your joints, which is exactly why it suits bodies that cannot simply go and lift heavier.</p></div>
   <div class="fory" data-reveal>{conds}</div>
+  <p style="margin-top:32px" data-reveal><a class="btn btn-ghost" href="/what-is-pilates/">What is Pilates, and what is it good for?{ARROW}</a></p>
 </div></section>
 
 <section class="section" style="background:var(--paper);border-top:1px solid var(--line)">
@@ -376,20 +378,6 @@ def page_about():
                  "knowsAbout":["Pilates","Reformer Pilates","Yoga","Fitness nutrition",
                                "Prenatal and postnatal exercise","Active aging"]}])
 
-PAGES = [page_home, page_rates, page_book, page_about]
-
-def main():
-    written = []
-    for fn in PAGES:
-        htmls = fn()
-        path = re.search(r'<link rel="canonical" href="' + re.escape(S['url']) + r'([^"]*)"', htmls).group(1)
-        written.append(write(path, htmls))
-    for p in written:
-        print(f"  {os.path.relpath(p, ROOT):<48} {os.path.getsize(p)//1024} KB")
-    print(f"{len(written)} pages built")
-
-
-# ─────────────────────────────────────────────────────────── recipes
 RECIPES = json.load(open(os.path.join(ROOT, 'content', 'recipes-raw.json')))
 RECIPES.sort(key=lambda r: r.get('date') or '', reverse=True)
 
@@ -499,7 +487,90 @@ def page_recipe_index():
                               "url": "%s/the-culinary-greenhouse/%s/" % (S['url'], r['slug'])}
                              for r in RECIPES]}])
 
-PAGES = [page_home, page_rates, page_book, page_about, page_recipe_index]
+def build_redirects():
+    """Point every retired WordPress URL at whatever now covers it."""
+    src = os.path.join(ROOT, 'content', 'posts-raw.json')
+    if not os.path.exists(src):
+        return []
+    posts = json.load(open(src))
+    live = {r['slug'] for r in RECIPES}
+
+    # explicit wins first — these do not classify cleanly by keyword
+    EXPLICIT = {
+        'rates-services': '/rates-and-services/',
+        'beach-yoga-booking-groups-now': '/rates-and-services/',
+        'beach-yoga-is-simply-blissful': '/rates-and-services/',
+        'sound-healing-workshop': '/',
+        '832-2': '/',
+    }
+    FOOD = ('recipe','vegan','vegetarian','salad','soup','smoothie','cookie','brownie','tofu',
+            'chicken','sprout','squash','beet','taco','donut','stew','tempeh','kale','pizza',
+            'detox','hummus','sushi','curry','pasta','spring-roll','ice-cream','food','eat',
+            'nutrition','saute','hangover','yogurt','dip','chickpea','chard','bean','quinoa',
+            'salmon','shrimp','fish','cauliflower','cashew','snack','breakfast','lunch','dinner',
+            'dessert','bread','sauce','drink','juice','tea','coffee','wedding')
+    PILATES = ('pilates','reformer','scoliosis','core','posture','joint','back','stretch',
+               'yoga','natal','aging','age-50','athlete','golf','injur','strength')
+
+    out = []
+    for post in posts:
+        slug = post['slug']
+        if slug in live:
+            continue
+        title = R.strip_tags(post['title']['rendered'])
+        hay = (slug + ' ' + title).lower()
+        if slug in EXPLICIT:
+            target = EXPLICIT[slug]
+        elif any(k in hay for k in FOOD):
+            target = '/the-culinary-greenhouse/'
+        elif any(k in hay for k in PILATES):
+            target = '/what-is-pilates/'
+        else:
+            target = '/'          # never guess — send it to the homepage
+        out.append((slug, target))
+        write('/%s/' % slug, redirect_stub(target, title))
+    return out
+
+def page_pilates():
+    P = S['pilates']
+    secs = ''
+    for i, (h, body) in enumerate(P['sections']):
+        secs += ('<section class="psec" id="s%d"><h2 class="h3">%s</h2><p>%s</p></section>'
+                 % (i, e(h), e(body)))
+    toc = ''.join('<a href="#s%d">%s</a>' % (i, e(h)) for i, (h, _b) in enumerate(P['sections']))
+    body = ('<section class="section"><div class="wrap">'
+            '<div class="head" data-reveal><p class="eyebrow">What is Pilates</p>'
+            '<h1 class="h2">Strength without the pounding.</h1>'
+            '<p class="lead">%s</p></div>'
+            '<div class="pwrap">'
+            '<nav class="ptoc" aria-label="On this page" data-reveal>%s</nav>'
+            '<div data-reveal>%s</div>'
+            '</div></div></section>' % (e(P['intro']), toc, secs))
+    return shell('/what-is-pilates/', "What is Pilates, and what is it good for? | %s" % S['name'],
+        "How Reformer Pilates builds strength without loading your joints — and what it does for back and SI joint pain, scoliosis, active aging, athletes, and pre and postnatal recovery. %s, %s."
+        % (S['name'], S['city']),
+        body + cta_band(),
+        schema=[local_business_schema(),
+                {"@context": "https://schema.org", "@type": "Article",
+                 "headline": "What is Pilates, and what is it good for?",
+                 "about": "Reformer Pilates",
+                 "author": {"@type": "Person", "name": S['instructor']},
+                 "publisher": {"@id": S['url'] + "/#studio"},
+                 "articleSection": [h for h, _b in P['sections']]}])
+
+PAGES = [page_home, page_rates, page_book, page_about, page_pilates, page_recipe_index]
+
+# Retired WordPress posts keep their URLs and point at whatever replaced them.
+# GitHub Pages cannot serve a true 301, so these are instant meta-refresh stubs
+# with a canonical — which Google follows and treats as a redirect.
+def redirect_stub(target, title):
+    return ('<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">'
+            '<title>%s</title><link rel="canonical" href="%s%s">'
+            '<meta name="robots" content="noindex,follow">'
+            '<meta http-equiv="refresh" content="0; url=%s">'
+            '<script>location.replace("%s")</script></head>'
+            '<body><p>This page has moved. <a href="%s">Continue</a>.</p></body></html>'
+            % (e(title), S['url'], target, target, target, target))
 
 def sitemap(paths):
     urls = ''.join('<url><loc>%s%s</loc></url>' % (S['url'], p) for p in paths)
@@ -515,10 +586,15 @@ def main():
     for r in RECIPES:
         p = '/the-culinary-greenhouse/%s/' % r['slug']
         written.append(write(p, page_recipe(r))); paths.append(p)
+    stubs = build_redirects()
     open(os.path.join(ROOT, 'sitemap.xml'), 'w').write(sitemap(paths))
     for p in written:
         print("  %-52s %d KB" % (os.path.relpath(p, ROOT), os.path.getsize(p) // 1024))
-    print("%d pages + sitemap (%d urls)" % (len(written), len(paths)))
+    from collections import Counter
+    print("%d pages, %d redirect stubs, sitemap with %d urls"
+          % (len(written), len(stubs), len(paths)))
+    for t, n in Counter(t for _s, t in stubs).most_common():
+        print("    %-28s %d" % (t, n))
 
 if __name__ == '__main__':
     main()
