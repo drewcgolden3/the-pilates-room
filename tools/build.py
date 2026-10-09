@@ -136,7 +136,7 @@ def footer():
                nav, e(S['hours']), 'Appointment only', socials,
                e(S['name']), S.get('teachingSince', 2008)))
 
-def shell(path, title, desc, body, schema=None, preload=None):
+def shell(path, title, desc, body, schema=None, preload=None, body_class=''):
     blocks = ''.join('\n<script type="application/ld+json">%s</script>'
                      % json.dumps(s, separators=(',', ':')) for s in (schema or []))
     canon = S['url'] + path
@@ -162,10 +162,12 @@ def shell(path, title, desc, body, schema=None, preload=None):
             '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>\n'
             '<link rel="stylesheet" href="%s">\n'
             '<link rel="stylesheet" href="/assets/site.css">%s%s\n'
-            '</head>\n<body>\n%s\n<main id="main">\n%s\n</main>\n%s\n'
+            '</head>\n<body%s>\n%s\n<main id="main">\n%s\n</main>\n%s\n'
             '<script src="/assets/site.js" defer></script>\n</body>\n</html>\n'
             % (e(title), e(desc), canon, noindex, e(title), e(desc), canon, S['url'],
-               FONTS, pre, blocks, header(path), body, footer()))
+               FONTS, pre, blocks,
+               ' class="%s"' % body_class if body_class else '',
+               header(path), body, footer()))
 
 def write(path, text):
     text = rebase(text)
@@ -232,20 +234,24 @@ def page_home():
                    for q, a in S['faqs'][:5])
 
     body = (
-    # hero — editorial split, photography bleeding right, no dark overlay
-    '<section class="hero"><div class="shell hero-grid">'
-    '<div class="hero-copy">'
-    '<h1 class="d1">Feel the difference in one session.</h1>'
-    '<p class="lede">A private studio on High Street, and an hour that is entirely yours. '
+    # Full-bleed hero, Bayshore-style: photography behind, her logo over it.
+    # The logo stays in full colour — a white knockout collapses the lotus
+    # into a solid blob, because its petals are separated by colour, not alpha.
+    '<section class="hero" id="heroSlides">'
+    '<div class="hero-bg">%s</div>'
+    '<div class="shell hero-inner">'
+    '<p class="hero-eyebrow">Portsmouth, New Hampshire &nbsp;·&nbsp; Since %s</p>'
+    '<h1 class="hero-mark"><img src="/assets/img/logo.png" width="597" height="316" '
+    'alt="%s" fetchpriority="high"></h1>'
+    '<p class="hero-tag">Feel the difference in one session.</p>'
+    '<p class="hero-sub">A private studio on High Street, and an hour that is entirely yours. '
     'Book a class with instructor %s one-on-one, or with a partner.</p>'
-    '<div class="hero-act"><a class="btn btn-pri" href="tel:%s">Call %s%s</a>'
-    '<a class="ln-b" href="/book-an-appointment/">How booking works%s</a></div>'
-    '<p class="hero-fine">Every new client starts with a free thirty-minute consultation. '
-    'Monday to Friday, by appointment.</p>'
-    '</div>'
-    '<div class="hero-media" id="heroSlides">%s'
+    '<div class="hero-acts"><a class="btn btn-pri" href="tel:%s">Call %s</a>'
+    '<a class="btn btn-ghost-l" href="/book-an-appointment/">How booking works</a></div>'
+    '<p class="hero-foot">%s &nbsp;·&nbsp; Free parking behind the building &nbsp;·&nbsp; '
+    'Monday to Friday, by appointment</p>'
     '<div class="hero-dots" id="heroDots" role="group" aria-label="Choose photograph">%s</div>'
-    '</div></div></section>'
+    '</div></section>'
 
     '<section class="rail"><div class="shell rail-in">%s</div></section>'
 
@@ -307,7 +313,8 @@ def page_home():
     '<a class="ln" href="/book-an-appointment/" style="color:var(--blue)">the booking page</a>.</p>'
     '</div></section>'
 
-    % (e(S['instructor']), S['phoneRaw'], e(S['phone']), ARR, ARR, slides, dots, rail, ARR,
+    % (slides, S.get('studioSince', 2013), e(S['name']), e(S['instructor']),
+       S['phoneRaw'], e(S['phone']), e(addr()), dots, rail, ARR,
        pic('hands-on-springs', 'Michele guiding a client through springwork on the reformer',
            '(max-width:1040px) 100vw, 42vw'),
        rows, ARR, conds,
@@ -321,7 +328,7 @@ def page_home():
         "Private and semi-private Reformer Pilates with %s at %s. Back pain, rehabilitation, "
         "pre and postnatal, active aging. Free 30-minute consultation — call %s."
         % (S['instructor'], addr(), S['phone']),
-        body, schema=[biz(), faq_schema()], preload=S['hero'][0][0])
+        body, schema=[biz(), faq_schema()], preload=S['hero'][0][0], body_class='home')
 
 
 def page_rates():
