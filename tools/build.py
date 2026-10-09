@@ -279,6 +279,14 @@ def page_home():
     '<h2 class="d2">Most people here are working around something.</h2></div>'
     '<dl class="cond">%s</dl></div></section>'
 
+    # a wide banner frame of Michele teaching — her best photograph, and only
+    # 1733x684, so it is given the full width its crop was made for
+    '<figure class="bleed"><img src="/assets/img/michele-barre.jpg" '
+    'srcset="/assets/img/michele-barre@700.jpg 850w, /assets/img/michele-barre.jpg 1700w" '
+    'sizes="100vw" alt="Michele McCauley teaching at the barre in the studio" '
+    'width="1700" height="671" loading="lazy" decoding="async">'
+    '<figcaption>In the studio on High Street.</figcaption></figure>'
+
     # michele
     '<section class="band on-sand"><div class="shell duo duo-flip">'
     '<figure class="ratio-45">%s</figure>'
