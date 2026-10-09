@@ -14,6 +14,25 @@ import recipes as R
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 S = json.load(open(os.path.join(ROOT, 'content', 'site.json')))
+
+# BASE lets one build serve either from a GitHub Pages subpath (staging) or
+# from the domain root (launch). PREVIEW keeps the staging copy out of search
+# so it can never compete with her live WordPress site for the same content.
+BASE = os.environ.get('BASE', '').rstrip('/')
+PREVIEW = os.environ.get('PREVIEW') == '1'
+
+def rebase(doc):
+    """Prefix every root-absolute asset/link path with BASE.
+
+    Applied once to the finished document rather than at every call site, so
+    there is no way to forget it on a new template."""
+    if not BASE:
+        return doc
+    doc = re.sub(r'(\b(?:href|src)=")(/(?!/))', r'\1' + BASE + r'\2', doc)
+    doc = re.sub(r'(srcset=")([^"]+)(")',
+                 lambda m: m.group(1) + re.sub(r'(^|,\s*)/', r'\1' + BASE + '/', m.group(2)) + m.group(3),
+                 doc)
+    return doc
 FONTS = ("https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;"
          "0,9..144,400;0,9..144,500;1,9..144,300&family=Inter:wght@400;500;600&display=swap")
 
@@ -114,6 +133,7 @@ def shell(path, title, desc, body, schema=None, hero_preload=None):
         f'\n<script type="application/ld+json">{json.dumps(s, separators=(",",":"))}</script>'
         for s in (schema or []))
     canon = S['url'] + path
+    noindex = '\n<meta name="robots" content="noindex,nofollow">' if PREVIEW else ''
     pre = (f'\n<link rel="preload" as="image" href="/assets/img/{hero_preload}.jpg" '
            f'imagesrcset="/assets/img/{hero_preload}@700.jpg 700w, /assets/img/{hero_preload}.jpg 1400w">'
            if hero_preload else '')
@@ -124,7 +144,7 @@ def shell(path, title, desc, body, schema=None, hero_preload=None):
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{e(title)}</title>
 <meta name="description" content="{e(desc)}">
-<link rel="canonical" href="{canon}">
+<link rel="canonical" href="{canon}">{noindex}
 <meta property="og:type" content="website">
 <meta property="og:title" content="{e(title)}">
 <meta property="og:description" content="{e(desc)}">
@@ -151,6 +171,7 @@ def shell(path, title, desc, body, schema=None, hero_preload=None):
 '''
 
 def write(path, text):
+    text = rebase(text)
     out = os.path.join(ROOT, path.strip('/'), 'index.html') if path != '/' else os.path.join(ROOT, 'index.html')
     os.makedirs(os.path.dirname(out), exist_ok=True)
     open(out, 'w', encoding='utf-8').write(text)
@@ -588,6 +609,9 @@ def main():
         written.append(write(p, page_recipe(r))); paths.append(p)
     stubs = build_redirects()
     open(os.path.join(ROOT, 'sitemap.xml'), 'w').write(sitemap(paths))
+    open(os.path.join(ROOT, 'robots.txt'), 'w').write(
+        'User-agent: *\nDisallow: /\n' if PREVIEW
+        else 'User-agent: *\nAllow: /\n\nSitemap: %s/sitemap.xml\n' % S['url'])
     for p in written:
         print("  %-52s %d KB" % (os.path.relpath(p, ROOT), os.path.getsize(p) // 1024))
     from collections import Counter
