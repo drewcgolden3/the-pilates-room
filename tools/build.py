@@ -235,10 +235,9 @@ def page_home():
     # hero — editorial split, photography bleeding right, no dark overlay
     '<section class="hero"><div class="shell hero-grid">'
     '<div class="hero-copy">'
-    '<h1 class="d1">A private studio on High Street, and an hour that is entirely yours.</h1>'
-    '<p class="lede">Reformer Pilates with %s — one to one, or with a partner. '
-    'Most people arrive because something hurts, something changed, or something they love doing '
-    'has started to cost them.</p>'
+    '<h1 class="d1">Feel the difference in one session.</h1>'
+    '<p class="lede">A private studio on High Street, and an hour that is entirely yours. '
+    'Book a class with instructor %s one-on-one, or with a partner.</p>'
     '<div class="hero-act"><a class="btn btn-pri" href="tel:%s">Call %s%s</a>'
     '<a class="ln-b" href="/book-an-appointment/">How booking works%s</a></div>'
     '<p class="hero-fine">Every new client starts with a free thirty-minute consultation. '
