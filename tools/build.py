@@ -106,7 +106,7 @@ def header(path):
     mob = ''.join('<a href="%s">%s</a>' % (h, e(l)) for h, l in links)
     return ('<header class="hdr"><div class="shell hdr-in">'
             '<a class="hdr-logo" id="navLogoTarget" href="/" aria-label="%s — home">'
-            '<img src="/assets/img/logo.png" width="158" height="84" alt="%s"></a>'
+            '<img src="/assets/img/logo.png" width="158" height="58" alt="%s"></a>'
             '<nav aria-label="Primary">%s</nav>'
             '<div class="hdr-call"><a class="hdr-tel" href="tel:%s">%s</a>'
             '<a class="btn btn-pri" href="/book-an-appointment/">Book</a></div>'
@@ -250,7 +250,7 @@ def page_home():
     '<p class="hero-eyebrow">Portsmouth, New Hampshire &nbsp;·&nbsp; Since %s</p>'
     '<h1 class="hero-mark"><span class="hero-logo-slot">'
     '<span class="hero-logo" id="heroLogo">'
-    '<img src="/assets/img/logo.png" width="597" height="316" alt="%s" fetchpriority="high">'
+    '<img src="/assets/img/logo.png" width="597" height="221" alt="%s" fetchpriority="high">'
     '</span></span></h1>'
     '<p class="hero-tag">Feel the difference in one session.</p>'
     '<p class="hero-sub">A private studio on High Street, and an hour that is entirely yours. '

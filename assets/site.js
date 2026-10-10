@@ -77,6 +77,14 @@
     window.addEventListener('resize', measure);
     window.addEventListener('orientationchange', measure);
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(measure);
+    // the logo and its nav twin both affect the geometry, so re-measure once
+    // each has actually decoded rather than trusting the first pass
+    [img, target.querySelector('img')].forEach(function (el) {
+      if (!el) return;
+      if (el.complete) return;
+      el.addEventListener('load', measure, { once: true });
+    });
+    if (window.ResizeObserver) new ResizeObserver(measure).observe(slot);
     measure();
   })();
 
