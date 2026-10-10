@@ -255,8 +255,8 @@ def page_home():
     '<p class="hero-tag">Feel the difference in one session.</p>'
     '<p class="hero-sub">A private studio on High Street, and an hour that is entirely yours. '
     'Book a class with instructor %s one-on-one, or with a partner.</p>'
-    '<div class="hero-acts"><a class="btn btn-pri" href="tel:%s">Call %s</a>'
-    '<a class="btn btn-ghost-l" href="/book-an-appointment/">How booking works</a></div>'
+    '<div class="hero-acts"><a class="btn btn-sky" href="/book-an-appointment/">Book now</a>'
+    '<a class="btn btn-ghost-l" href="/rates-and-services/">Rates &amp; services</a></div>'
     '<p class="hero-foot">%s &nbsp;·&nbsp; Free parking behind the building &nbsp;·&nbsp; '
     'Monday to Friday, by appointment</p>'
     '%s'
@@ -323,7 +323,7 @@ def page_home():
     '</div></section>'
 
     % (slides, S.get('studioSince', 2013), e(S['name']), e(S['instructor']),
-       S['phoneRaw'], e(S['phone']), e(addr()), dots, rail, ARR,
+       e(addr()), dots, rail, ARR,
        pic('hands-on-springs', 'Michele guiding a client through springwork on the reformer',
            '(max-width:1040px) 100vw, 42vw'),
        rows, ARR, conds,
@@ -391,9 +391,9 @@ def page_book():
             '<h1 class="d1" style="margin:14px 0 20px">Booking is a phone call.</h1>'
             '<p class="lede">There is no online calendar, and that is deliberate. Michele would '
             'rather hear what is going on with your body before she puts you on a reformer.</p>'
-            '<div class="hero-act"><a class="btn btn-pri" href="tel:%s">Call %s%s</a>'
+            '<div class="acts"><a class="btn btn-pri" href="tel:%s">Call %s%s</a>'
             '<a class="ln-b" href="mailto:%s">Or email the studio%s</a></div>'
-            '<p class="hero-fine">If she is teaching, leave a message with a number and she will '
+            '<p class="fine">If she is teaching, leave a message with a number and she will '
             'call you back.</p></div>'
             '<figure class="ratio-32">%s</figure></div></section>'
             '<section class="band on-sand"><div class="shell">'

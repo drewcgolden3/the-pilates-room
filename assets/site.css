@@ -29,6 +29,7 @@
   --blue:#0B5394;
   --blue-deep:#0A3A63;
   --blue-wash:#EAF1F8;
+  --sky-cta:#30B4E4;
   --coral:#B9513A;
   --rule:rgba(35,40,46,.14);
   --rule-soft:rgba(35,40,46,.08);
@@ -96,6 +97,8 @@ p{margin:0}
 .btn-ghost-l{border-color:var(--rule-light);color:#fff;background:transparent}
 .btn-ghost-l:hover{background:rgba(255,255,255,.1)}
 .btn-pale{background:var(--ivory);color:var(--blue-deep)}
+.btn-sky{background:var(--sky-cta);color:var(--ink)}
+.btn-sky:hover{background:#4FC4EE}
 .btn-pale:hover{background:#fff}
 
 /* ── header ─────────────────────────────────────────────── */
@@ -218,9 +221,9 @@ body.home .hdr-logo{visibility:hidden}
 .duo-flip>figure{order:-1}
 .duo figure{margin:0}
 .duo img{width:100%;object-fit:cover}
-.ratio-45 img{aspect-ratio:4/5}
-.ratio-32 img{aspect-ratio:3/2}
-.ratio-11 img{aspect-ratio:1/1}
+.ratio-45 img{height:auto;aspect-ratio:4/5}
+.ratio-32 img{height:auto;aspect-ratio:3/2}
+.ratio-11 img{height:auto;aspect-ratio:1/1}
 
 .sec-head{max-width:46rem;margin-bottom:clamp(2.2rem,4vw,3.4rem)}
 .sec-head .label{display:block;margin-bottom:14px}
@@ -322,7 +325,7 @@ body.home .hdr-logo{visibility:hidden}
 .rgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:clamp(1.4rem,3vw,2.6rem) clamp(1.2rem,2.4vw,2.2rem)}
 .rcard{text-decoration:none;color:inherit;display:grid;gap:14px}
 .rcard figure{margin:0;overflow:hidden;background:var(--sand)}
-.rcard img{width:100%;aspect-ratio:4/3;object-fit:cover;transition:transform 1s var(--ease)}
+.rcard img{width:100%;height:auto;aspect-ratio:4/3;object-fit:cover;transition:transform 1s var(--ease)}
 .rcard:hover img{transform:scale(1.04)}
 .rcard h3{font-size:1.1rem;line-height:1.28}
 .rcard p{font-size:.93rem;color:var(--ink-2)}
@@ -332,7 +335,7 @@ body.home .hdr-logo{visibility:hidden}
 .r-head{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);
   gap:clamp(1.8rem,4vw,3.4rem);align-items:center;padding-block:clamp(2rem,4vw,3.4rem)}
 .r-head figure{margin:0}
-.r-head img{width:100%;aspect-ratio:4/3;object-fit:cover}
+.r-head img{width:100%;height:auto;aspect-ratio:4/3;object-fit:cover}
 .r-head h1{margin-bottom:16px}
 .r-facts{display:flex;flex-wrap:wrap;gap:0;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule)}
 .r-facts div{padding:14px clamp(16px,2.4vw,30px) 14px 0;margin-right:clamp(16px,2.4vw,30px);
@@ -422,3 +425,8 @@ body.home .hdr-logo{visibility:hidden}
   font-family:var(--display);font-size:.82rem;font-weight:500;
   text-shadow:0 1px 14px rgba(0,0,0,.55)}
 @media (max-width:760px){ .bleed img{aspect-ratio:3/2;height:auto} }
+
+/* Action pair + fine print used on inner pages. These were orphaned when the
+   split hero was replaced — the buttons were colliding with no layout. */
+.acts{display:flex;flex-wrap:wrap;align-items:center;gap:16px 24px;margin-top:30px}
+.fine{margin-top:20px;font-size:.92rem;color:var(--ink-3);max-width:44ch;line-height:1.55}
