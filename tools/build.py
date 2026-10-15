@@ -254,7 +254,7 @@ def page_home():
     '</span></span></h1>'
     '<p class="hero-tag">Feel the difference in one session.</p>'
     '<p class="hero-sub">A private studio on High Street, and an hour that is entirely yours. '
-    'Book a class with instructor %s one-on-one, or with a partner.</p>'
+    'Book a session with instructor %s one-on-one, or with a partner.</p>'
     '<div class="hero-acts"><a class="btn btn-sky" href="/book-an-appointment/">Book now</a>'
     '<a class="btn btn-ghost-l" href="/rates-and-services/">Rates &amp; services</a></div>'
     '<p class="hero-foot">%s &nbsp;·&nbsp; Free parking behind the building &nbsp;·&nbsp; '
