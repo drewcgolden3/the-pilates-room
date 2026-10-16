@@ -181,7 +181,10 @@ body.home .hdr-logo{visibility:hidden}
 /* No isolation and no negative z-indexes here: the flying logo is a
    descendant, and an isolated stacking context would trap it behind the
    header instead of letting it land on top. */
-.hero{position:relative;min-height:clamp(620px,90vh,900px);
+/* Fills the viewport on open — a capped hero lets the next section peek in
+   under it. min-height, not height, so short windows let the content grow
+   rather than clipping it. svh keeps mobile steady as the URL bar moves. */
+.hero{position:relative;min-height:100vh;min-height:100svh;
   display:grid;align-items:center;background:var(--ink)}
 .hero-bg{position:absolute;inset:0;z-index:0;overflow:hidden}
 /* overlay lives inside the media layer, so .hero-inner needs no z-index —
@@ -388,7 +391,7 @@ body.home .hdr-logo{visibility:hidden}
 @media (max-width:1040px){
   .hdr nav,.hdr-call{display:none}
   .burger{display:flex}
-  .hero{min-height:clamp(560px,86vh,760px)}
+  .hero{min-height:100svh}
   .hero-inner{padding-block:clamp(6rem,16vh,8rem) clamp(3rem,6vh,4rem)}
   .duo,.duo-wide,.visit,.ladders,.r-head,.r-body,.guide,.cta-in{grid-template-columns:1fr}
   .duo-flip>figure{order:0}
